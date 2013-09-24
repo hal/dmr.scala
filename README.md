@@ -24,19 +24,20 @@ node @@ "/subsystem=datasources/data-source=ExampleDS"
 // address as list of pairs
 node @@ (("/subsystem" -> "datasources") :: ("data-source" -> "ExampleDS") :: Nil)
 
-// unbalanced addresses will throw an IllegalArgumentException
+// an unbalanced address will throw an IllegalArgumentException
 node @@ "/subsystem=datasources/data-source="
 ```
 
 ### Operations
 
-Operations are specified using the method `op(operation: Operation)`. An operation is thereby defined by a
+Operations are specified using the method `op(operation: Operation)`. An `Operation` is thereby defined by a
 `Symbol` and optional parameters. Each parameter is made up of another `Symbol` and a value. Using symbols
-makes the DSL more readable and allows an implicit conversion from `Symbol` to `Operator`. However there's one
-drawback in using symbols: they cannot contain characters like "-". `'read-resource` is therefore an illegal symbol.
-To use such a symbol you cannot use the shorthand `'read-resource`, but have to use the factory method
-`Symbol("read-resource")`. For the most common operations and parameters there are predefined symbols in
-`org.jboss.dmr.scala.Operation.Predefs`
+makes the DSL both more readable and extentable. There's an implicit conversion from `Symbol` to `Operator`, so
+you don't have to use `new Operator('foo)` all over the place.
+
+However there's one drawback in using symbols: they cannot contain characters like "-". `'read-resource` is therefore
+an illegal symbol. To use such a symbol you have to use the factory method `Symbol("read-resource")`. For the most
+common operations and parameters there are predefined symbols in `org.jboss.dmr.scala.Operation.Predefs`
 
 ```scala
 // root is just a constant for ""
@@ -75,4 +76,15 @@ composite (
   node @@ "/core-service=platform-mbean/type=runtime" op read_attribute(
     'name -> "start-time")
 )
+```
+
+## Execute an operation
+
+Once you have setup a model node you can execute it using [DMR.repl](https://github.com/heiko-braun/dmr-repl) like
+this:
+
+```scala
+val client = connect()
+val rootResource = node @@ root op read_resource
+val result = client.execute(rootResource.underlying)
 ```
