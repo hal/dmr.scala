@@ -4,6 +4,7 @@ import scala.collection.JavaConversions._
 import org.jboss.dmr.{ModelNode => JavaModelNode}
 
 object ModelNode {
+  val root = ""
   implicit def symbolToOperation(name: Symbol) = new Operation(name)
 
   def node(): ModelNode = new ModelNode
@@ -22,6 +23,11 @@ class ModelNode {
    * @return the underlying Java ModelNode
    */
   def underlying = delegate
+
+  def emptyAddress(): ModelNode = {
+    delegate.get("address").setEmptyList()
+    this
+  }
 
   /**
    * Sets the address of this model node.
@@ -44,7 +50,7 @@ class ModelNode {
    * @return this with the address set
    */
   def @@(address: Traversable[(String, String)]): ModelNode = {
-    delegate.get("address").setEmptyList()
+    emptyAddress()
     address.foreach(tuple => delegate.get("address").add(tuple._1, tuple._2))
     this
   }

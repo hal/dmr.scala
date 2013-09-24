@@ -1,33 +1,64 @@
 # DMR.scala
 
-Scala client library for DMR operations. Currently a DSL for creating DMR operations is supported.
+Scala client library for DMR operations. Offers a DSL for creating DMR operations.
 Gettting values out of a ModelNode will follow soon...
 
 ## Usage
 
-For the following examples to work please import `org.jboss.dmr.scala.ModelNode._` and `org.jboss.dmr.scala.Predefs._`
+For the following examples to work please import `org.jboss.dmr.scala.ModelNode._` and `org.jboss.dmr.scala.Predefs._`.
+Start by using one of the factory methods in `org.jboss.dmr.scala.ModelNode`:
 
-### Read the root node
+- `node()`: creates an empty model node
+- `composite(n: ModelNode, xn: ModelNode*)` creates a composite containing the given model nodes as steps
+
+### Address
+
+Use the `@@` operator to specify the address of a model node. The address can be specified as string or as
+`Traversable[(String, String)`
 
 ```scala
-node @@ "" op read_resource
+// address as string
+node @@ "/subsystem=datasources/data-source=ExampleDS"
+
+// address as string
+node @@ (("/subsystem" -> "datasources") :: ("data-source" -> "ExampleDS") :: Nil)
+
+// unbalanced addresses will throw an IllegalArgumentException
+node @@ "/subsystem=datasources/data-source="
 ```
 
-### Operation with parameters
+### Operations
+
+Operations are specified using the `op(operation: Operation)` method. 
+
+### Examples
+
+Read the root node
 
 ```scala
-node @@ "/core-service=management/access=authorization" op read_children_names(attributes_only -> true)
+// root is just a constant for ""
+node @@ root op read_resource
 ```
 
-### Composite operation
+Operation with parameters
+
+```scala
+node @@ "/core-service=management/|access=authorization" op read_children_names(
+    attributes_only -> true)
+```
+
+Composite operation
 
 ```scala
 composite (
-    node @@ "/core-service=management/access=authorization" op read_resource(recursive_depth -> 2),
-    node @@ "/core-service=management/access=authorization" op read_children_names('name -> "role-mapping"),
-    node @@ "/subsystem=mail/mail-session=*" op read_resource_description,
-    node @@ "subsystem=datasources/data-source=ExampleDS" op 'disable,
-    node @@ "/core-service=platform-mbean/type=runtime" op read_attribute('name -> "start-time")
+  node @@ "/core-service=management/access=authorization" op read_resource(
+    recursive_depth -> 2),
+  node @@ "/core-service=management/access=authorization" op read_children_names(
+    'name -> "role-mapping"),
+  node @@ "/subsystem=mail/mail-session=*" op read_resource_description,
+  node @@ "/subsystem=datasources/data-source=ExampleDS" op 'disable,
+  node @@ "/core-service=platform-mbean/type=runtime" op read_attribute(
+    'name -> "start-time")
 )
 ```
 
