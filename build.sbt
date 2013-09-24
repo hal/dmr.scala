@@ -16,5 +16,5 @@ libraryDependencies ++= Seq(
 initialCommands += """
   import org.jboss.dmr.scala.ModelNode._
   import org.jboss.dmr.scala.Operation._
-  import org.jboss.dmr.scala.Predefs._
+  import org.jboss.dmr.scala.Operation.Predefs._
 """
