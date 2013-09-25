@@ -1,10 +1,12 @@
 package org.jboss.dmr.scala
 
 import scala.collection.JavaConversions._
+import scala.reflect.runtime.universe.{Symbol => _, _}
 import org.jboss.dmr.{ModelNode => JavaModelNode}
 
 object ModelNode {
   val root = ""
+
   implicit def symbolToOperation(name: Symbol) = new Operation(name)
 
   def node(): ModelNode = new ModelNode
@@ -32,6 +34,7 @@ class ModelNode {
   /**
    * Sets the address of this model node.
    * @param address the address as string e.g. "/core-service=management/access=authorization"
+   * @throws if the address is unbalanced
    * @return this with the address set
    */
   @throws[IllegalArgumentException]("if the address is unbalanced")
@@ -39,7 +42,8 @@ class ModelNode {
     val segments = address split "/" filter (_.nonEmpty)
     val pairs = segments.map(nameValue => {
       val parts = nameValue split "="
-      if (parts.length == 2) Pair(parts(0), parts(1)) else throw new IllegalArgumentException(s"Unbalanced address '$address'")
+      if (parts.length == 2) Pair(parts(0), parts(1)) else throw new IllegalArgumentException(
+        s"""Unbalanced address "$address".""")
     })
     @@(pairs)
   }
@@ -58,7 +62,7 @@ class ModelNode {
   /**
    * Executes the specified operation
    * @param operation the operation (symbols are implictly converted)
-   * @return this
+   * @return this with the operation set
    */
   def op(operation: Operation): ModelNode = {
     delegate.get("operation").set(operation.name.name)
@@ -67,12 +71,14 @@ class ModelNode {
   }
 
   /**
-   * Sets a named value in the underlying ModelNode
-   * @param name the name
+   * Sets the specified property to the given value
+   * @param name the properties name
    * @param value the value
+   * @tparam T the value type
+   * @throws if the value type is not supported
    */
-  @throws[IllegalArgumentException]("if type of value is not supported")
-  def update(name: String, value: Any) {
+  @throws[IllegalArgumentException]("if the value type is not supported")
+  def update[T: TypeTag](name: String, value: T) {
     value match {
       case boolean: Boolean => delegate.get(name).set(boolean)
       case int: Int => delegate.get(name).set(int)
@@ -82,12 +88,18 @@ class ModelNode {
       case double: Double => delegate.get(name).set(double)
       case bigDecimal: BigDecimal => delegate.get(name).set(bigDecimal.underlying())
       case string: String => delegate.get(name).set(string)
-      // TODO handle 'unchecked since it is eliminated by erasure' warning
-      // see http://stackoverflow.com/questions/1094173/how-do-i-get-around-type-erasure-on-scala-or-why-cant-i-get-the-type-paramete
-      // and http://daily-scala.blogspot.de/2010/01/overcoming-type-erasure-in-matching-2.html
-      case nodes: Seq[ModelNode] => delegate.get(name).set(nodes.map(_.delegate))
-      // to be continued...
-      case _ => throw new IllegalArgumentException(s"Illegal type ${value.getClass} for $name")
+      case values: Traversable[_] => {
+        val targs = typeOf[T] match { case TypeRef(_, _, args) => args }
+        targs(0) match {
+          case ModelNode => {
+            val nodes = values.toList.map(_.asInstanceOf[ModelNode].delegate)
+            delegate.get(name).set(nodes)
+          }
+          case _ => throw new IllegalArgumentException(
+            s"""Illegal type parameter ${targs(0)} in type ${value.getClass.getName} for "$name".""")
+        }
+      }
+      case _ => throw new IllegalArgumentException(s"""Illegal type ${value.getClass.getName} for "$name".""")
     }
   }
 

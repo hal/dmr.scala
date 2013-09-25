@@ -3,7 +3,7 @@ package org.jboss.dmr.scala
 import org.jboss.dmr.scala.Operation.Parameter
 
 object Operation {
-  type Parameter = (Symbol, Any)
+  type Parameter[T] = (Symbol, T)
 
   object Predefs {
     val access_control = Symbol("access-control")
@@ -30,9 +30,9 @@ object Operation {
  * @param name The name of the operator as symbol
  */
 class Operation(val name: Symbol) {
-  var params = List.empty[Parameter]
+  var params = List.empty[Parameter[_]]
 
-  def apply(params: Parameter*): Operation = {
+  def apply(params: Parameter[_]*): Operation = {
     this.params = params.toList
     this
   }
