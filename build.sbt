@@ -4,13 +4,15 @@ version := "1.0.0"
 
 scalaVersion := "2.10.2"
 
+scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature", "-language:implicitConversions")
+
 resolvers ++= Seq(
   "jboss repo" at "https://repository.jboss.org/nexus/content/groups/public/"
 )
 
 libraryDependencies ++= Seq(
-  "org.jboss" % "jboss-dmr" % "1.2.0.Final",
-  "org.scalatest" %% "scalatest" % "1.9.1" % "test"
+  "org.scala-lang" % "scala-reflect" % "2.10.2",
+  "org.jboss" % "jboss-dmr" % "1.2.0.Final"
 )
 
 initialCommands += """
