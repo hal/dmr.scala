@@ -37,7 +37,9 @@ you don't have to use `new Operator('foo)` all over the place.
 
 However there's one drawback in using symbols: they cannot contain characters like "-". `'read-resource` is therefore
 an illegal symbol. To use such a symbol you have to use the factory method `Symbol("read-resource")`. For the most
-common operations and parameters there are predefined symbols in `org.jboss.dmr.scala.Operation.Predefs`
+common operations and parameters there are predefined symbols in `org.jboss.dmr.scala.Operation.Predefs`.
+
+Here are some examples using operations:
 
 ```scala
 // root is just a constant for ""
