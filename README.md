@@ -22,7 +22,7 @@ Use the `@@` operator to specify the address of the model node. The address can 
 node @@ "/subsystem=datasources/data-source=ExampleDS"
 
 // address as list of pairs
-node @@ (("/subsystem" -> "datasources") :: ("data-source" -> "ExampleDS") :: Nil)
+node @@ (("subsystem" -> "datasources") :: ("data-source" -> "ExampleDS") :: Nil)
 
 // an unbalanced address will throw an IllegalArgumentException
 node @@ "/subsystem=datasources/data-source="
