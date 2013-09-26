@@ -41,4 +41,14 @@ val module = for {
     module <- cacheContainer("web" / "module")
 } yield module
 
+
+// map & flatMap
+
+val comp = composite(...)
+
+val filtered = comp.flatMap(childName => childName.eq("foo") : childName)
+
+
+
+
 ```
