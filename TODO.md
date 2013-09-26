@@ -36,5 +36,14 @@ val module = for {
 
 
 
+val t = ModelNode.create
+
+t += "child" -> ModelNode.create {
+    "foo" -> 1,
+    "bar" -> 2
+}
+
+
+
 
 ```
