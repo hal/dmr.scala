@@ -19,14 +19,16 @@ pool("max-size") = 50
 // complex getter & setter aka traversal
 val c = composite(...) // 3 steps
 
-// version 1
-val jndiName = c("result" / "step1" / "jndiName") 
+// complex type traversal (immutable)
+val step1 = c / "result" / "step1" 
 
-// version 2
-val step1 = c("result" / "step1") 
-val poolSize = step1("poolSize")
-val poolSizeValue = poolSize.asInt
+// simple type getter / setter
+val poolSize = step1("poolSize").asInt
+step1("poolSize") = 10
 
+// setting complex types
+val t = node @@ root
+t / "child" / "grandchild" += ("foo" -> anotherModelNode)
 
 // property model nodes
 
