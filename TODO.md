@@ -12,9 +12,9 @@ val asyncResult = client.execute(node @@ "/subsystem=infinispan" ? 'read_resourc
 // node with address
 val n = node @@ "subsystem" -> "datasources" / "datasource" -> "ExampleDS"
 
-// simple getter & setter
-val jndiName = n("jndiName")
-n("jndiName") = "java://Test"
+val pool = n("pool" / "default")
+pool("max-size") = 50
+
 
 // complex getter & setter aka traversal
 val c = composite(...) // 3 steps
