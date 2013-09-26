@@ -5,14 +5,12 @@ import scala.reflect.runtime.universe.{Symbol => _, _}
 import org.jboss.dmr.{ModelNode => JavaModelNode}
 
 object ModelNode {
-  val root = ""
+  def root(): ModelNode = new ModelNode().emptyAddress()
 
-  implicit def symbolToOperation(name: Symbol) = new Operation(name)
+  def create(): ModelNode = new ModelNode
 
-  def node(): ModelNode = new ModelNode
-
-  def composite(n: ModelNode, xn: ModelNode*): ModelNode = {
-    val comp = node() @@ "" op 'composite
+  def createComposite(n: ModelNode, xn: ModelNode*): ModelNode = {
+    val comp = root() exec 'composite
     comp("steps") = Seq(n) ++ xn
     comp
   }
@@ -31,31 +29,15 @@ class ModelNode {
     this
   }
 
-  /**
-   * Sets the address of this model node.
-   * @param address the address as string e.g. "/core-service=management/access=authorization"
-   * @throws if the address is unbalanced
-   * @return this with the address set
-   */
-  @throws[IllegalArgumentException]("if the address is unbalanced")
-  def @@(address: String): ModelNode = {
-    val segments = address split "/" filter (_.nonEmpty)
-    val pairs = segments.map(nameValue => {
-      val parts = nameValue split "="
-      if (parts.length == 2) Pair(parts(0), parts(1)) else throw new IllegalArgumentException(
-        s"""Unbalanced address "$address".""")
-    })
-    @@(pairs)
+  def at(address: (String, String)): ModelNode = {
+    emptyAddress()
+    delegate.get("address").add(address._1, address._2)
+    this
   }
 
-  /**
-   * Sets the address of this model node.
-   * @param address the address as pairs e.g. List(("/core-service", "management"), ("access", "authorization"))
-   * @return this with the address set
-   */
-  def @@(address: Traversable[(String, String)]): ModelNode = {
-    emptyAddress()
-    address.foreach(tuple => delegate.get("address").add(tuple._1, tuple._2))
+  def / (address: (String, String)) : ModelNode = {
+    if(!delegate.get("address").isDefined()) emptyAddress()
+    delegate.get("address").add(address._1, address._2)
     this
   }
 
@@ -64,11 +46,13 @@ class ModelNode {
    * @param operation the operation (symbols are implictly converted)
    * @return this with the operation set
    */
-  def op(operation: Operation): ModelNode = {
+  def exec (operation: Operation): ModelNode = {
     delegate.get("operation").set(operation.name.name)
     operation.params.foreach(param => this(param._1.name) = param._2)
     this
   }
+
+  // TODO def ? for async execution
 
   /**
    * Sets the specified property to the given value
@@ -91,7 +75,7 @@ class ModelNode {
       case values: Traversable[_] => {
         val targs = typeOf[T] match { case TypeRef(_, _, args) => args }
         targs(0) match {
-          case ModelNode => {
+          case _: ModelNode => {
             val nodes = values.toList.map(_.asInstanceOf[ModelNode].delegate)
             delegate.get(name).set(nodes)
           }
