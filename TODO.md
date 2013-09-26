@@ -16,7 +16,7 @@ val step1 = c / "result" / "step1"
 
 // simple type getter / setter
 val poolSize = step1("poolSize").asInt
-step1 += ("poolSize" -> 10)
+step1("poolSize") =  10
 
 // setting complex types
 val t = ModelNode.create
