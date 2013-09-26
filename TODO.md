@@ -8,17 +8,23 @@ val syncResult = client.execute(node @@ "/subsystem=infinispan" ! 'read_resource
 // return future
 val asyncResult = client.execute(node @@ "/subsystem=infinispan" ? 'read_resource('recursive_depth -> 3)
 
-// Using apply? ...
-val result = node("result")
-val module = node("result", "cache-container", "web", "module")
 
-// setter (:>)
-val model = node @@ ("datasource" / "Example" ) :> ("jndiName", "java:/Test")
+// node with address
+val n = node @@ "subsystem" -> "datasources" / "datasource" -> "ExampleDS"
 
+// simple getter & setter
+val jndiName = n("jndiName")
+n("jndiName") = "java://Test"
 
-// getter (<:)
-val value = model <: ("datasource" / "Example", "jndiName") 
+// complex getter & setter aka traversal
+val c = composite(...) // 3 steps
 
+// version 1
+val jndiName = c("result" / "step1" / "jndiName") 
+
+// version 2
+val step1 = c("result" / "step1") 
+val poolSize = step1("poolSize")
 
 
 // Chaining Options?
