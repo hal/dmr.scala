@@ -25,16 +25,18 @@ val jndiName = c("result" / "step1" / "jndiName")
 // version 2
 val step1 = c("result" / "step1") 
 val poolSize = step1("poolSize")
+val poolSizeValue = poolSize.asInt
 
 
-// Chaining Options?
+// property model nodes
+
+val subsystemNames = node @@ root ! 'read_children_names('child_type->"subsystem")
+
+
+// Chaining Options
 val module = for {
-    result <- node <: 'result
-    cacheContainer <- result.get("cache-container")
-    web <- cacheContainer.get("web")
-    module <- web.get("module")
+    cacheContainer <- node("result" / "cache-container")
+    module <- cacheContainer("web" / "module")
 } yield module
 
-// Using custom operators?
-val module = node ? "result" ? "cache-container" ? "web" ? "module"
 ```
