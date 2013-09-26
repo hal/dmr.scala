@@ -16,8 +16,7 @@ object ModelNode {
   }
 }
 
-class ModelNode {
-  private val delegate: JavaModelNode = new JavaModelNode
+class ModelNode(val delegate: JavaModelNode = new JavaModelNode()) {
 
   /**
    * @return the underlying Java ModelNode
@@ -41,6 +40,16 @@ class ModelNode {
     this
   }
 
+  def / (name: String): Option[ModelNode] = {
+    val javaNode = delegate.get(name)
+    if (javaNode.isDefined) Some(new ModelNode(javaNode)) else None
+  }
+
+  def += (tuple: (String, ModelNode)): ModelNode = {
+    delegate.get(tuple._1).set(tuple._2.underlying)
+    this
+  }
+
   /**
    * Executes the specified operation
    * @param operation the operation (symbols are implictly converted)
@@ -52,7 +61,10 @@ class ModelNode {
     this
   }
 
-  // TODO def ? for async execution
+  def apply(name: String): Option[ModelNode] = {
+    val javaNode = delegate.get(name)
+    if (javaNode.isDefined) Some(new ModelNode(javaNode)) else None
+  }
 
   /**
    * Sets the specified property to the given value

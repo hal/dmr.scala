@@ -5,4 +5,5 @@ package org.jboss.dmr
  */
 package object scala {
   implicit def symbolToOperation(name: Symbol) = new Operation(name)
+  implicit def optionToModelNode(opt: Option[ModelNode]) = opt.getOrElse(ModelNode.create())
 }
