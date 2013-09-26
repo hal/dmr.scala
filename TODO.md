@@ -13,11 +13,11 @@ val result = node("result")
 val module = node("result", "cache-container", "web", "module")
 
 // setter (:>)
-val model = node @@ ("datasource" / "Example" # "jndiName") :> "java:/Test"
+val model = node @@ ("datasource" / "Example" ) :> ("jndiName", "java:/Test")
 
 
 // getter (<:)
-val value = model <: ("datasource" / "Example" # "jndiName") 
+val value = model <: ("datasource" / "Example", "jndiName") 
 
 
 
