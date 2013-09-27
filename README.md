@@ -1,82 +1,177 @@
 # DMR.scala
 
-Scala client library for DMR operations. Offers a DSL for creating DMR operations.
+Scala client library for DMR operations. Features:
+
+* DSL for creating DMR operations
+* Interact with model nodes in a more natural way
+
 For an introduction to DMR please refer to the [WildFly Wiki](https://docs.jboss.org/author/display/WFLY8/Detyped+management+and+the+jboss-dmr+library).
 
 ## Getting started
 
-Start by using one of the factory methods in `org.jboss.dmr.scala.ModelNode`:
-
-- `node()`: creates an empty model node
-- `composite(n: ModelNode, xn: ModelNode*)` creates a composite containing the given model nodes as steps
-
-Please make sure to import `org.jboss.dmr.scala.ModelNode._` and `org.jboss.dmr.scala.Operation.Predefs._` in order
-to take full advantage of the DSL.
-
-## Address
-
-Use the `at` method to specify the address of the model node. The address can be specified as string or as
-`Traversable[(String, String)]`
+Please make sure to import the following packages in order to bring the necessary implicit conversions into scope and
+to save you some keystrokes.
 
 ```scala
-// address as string
-node @@ "/subsystem=datasources/data-source=ExampleDS"
-
-// address as list of pairs
-node @@ (("subsystem" -> "datasources") :: ("data-source" -> "ExampleDS") :: Nil)
-
-// an unbalanced address will throw an IllegalArgumentException
-node @@ "/subsystem=datasources/data-source="
+import org.jboss.dmr.scala._
+import org.jboss.dmr.scala.ModelNode
 ```
 
-## Operations
+## Creating model nodes
 
-Operations are specified using the method `op(operation: Operation)`. An `Operation` is thereby defined by a
-`Symbol` and optional parameters. Each parameter is made up of another `Symbol` and a value. Using symbols
-makes the DSL both more readable and extentable. There's an implicit conversion from `Symbol` to `Operator`, so
-you don't have to use `new Operator('foo)` all over the place.
-
-However there's one drawback in using symbols: they cannot contain characters like "-". `'read-resource` is therefore
-an illegal symbol. To use such a symbol you have to use the factory method `Symbol("read-resource")`. For the most
-common operations and parameters there are predefined symbols in `org.jboss.dmr.scala.Operation.Predefs`.
-
-Here are some examples using operations:
+Use the factory methods in `org.jboss.dmr.scala.ModelNode` to create model nodes:
 
 ```scala
-// root is just a constant for ""
-// read_resource is predefined in org.jboss.dmr.scala.Operation.Predefs
-node @@ root op read_resource
+// creates an empty model node
+ModelNode.empty
 
-// use own symbols as you need
-node @@ "/subsystem=datasources/data-source=ExampleDS" op 'disable
+// creates a new model node with structure
+ModelNode(
+  "flag" -> true,
+  "hello" -> "world",
+  "answer" -> 42,
+  "child" -> ModelNode(
+    "inner-a" -> 123,
+    "inner-b" -> "test",
+    "deep-inside" -> ModelNode("foo" -> "bar"),
+    "deep-list" -> List(
+      ModelNode("one" -> 1),
+      ModelNode("two" -> 2),
+      ModelNode("three" -> 3)
+    )
+  )
+)
+```
 
-// but be sure to use the factory method for operations containing "-"
-node @@ "/foo=bar" op Symbol("read-resource-metrics")
+## Addressing and operations
 
-// parameters can be specified as pairs (Symbol -> Any)
-node @@ "/core-service=platform-mbean/type=runtime" op read_resource(
-  attributes_only -> true,
-  include_runtime -> false,
-  recursive_depth -> 3,
-  Symbol("custom-parameter") -> "custom-value")
+You can use a DSL like API to set the address and operation for a model node. To describe the "read-resource" operation
+on "/subsystem=datasources/data-source=ExampleDS" use the following code:
 
-// unsupported parameter values will throw an IllegalArgumentException
-node @@ root op read_resource('proxies -> Console.out)
+```scala
+ModelNode.empty at ("subsystem" -> "datasources") / ("data-source" -> "ExampleDS") exec 'read_resource(
+  'include_runtime -> false,
+  'recursive_depth -> 2
+)
+```
+
+Addresses can be written down as `(String, String)` tuples separated by "/". Operations are specified using
+`Symbol`s and an optional list of parameters. Each parameter is made up of another `Symbol` and a value. Using symbols
+makes the DSL both more readable and extentable.
+
+However there's one drawback in using symbols: they cannot contain characters like "-". `'read-resource` is therefore
+an illegal symbol. As most DMR operations and many parameters do contain "-", this library will replace all
+underscores in a symbol with dashes:
+
+```scala
+ModelNode.empty exec 'read_resource('include_runtime -> true)
+// is exactly the same as
+ModelNode.empty exec Symbol("read-resource")(Symbol("include-runtime") -> true)
+```
+
+Here are some more examples using addresses and operations:
+
+```scala
+// root is a constant for an empty address
+ModelNode.empty at root exec 'read_resource
+ModelNode.empty at ("subsystem" -> "datasources") / ("data-source" -> "ExampleDS") exec 'disable
+
+// parameters are specified as pairs (Symbol -> Any)
+ModelNode.empty at ("core-service" -> "platform-mbean") / ("type" -> "runtime") exec 'read_resource(
+  'attributes_only -> true,
+  'include_runtime -> false,
+  'recursive_depth -> 3,
+  'custom_parameter -> "custom-value"
+)
+
+// unsupported parameter types will throw an IllegalArgumentException
+ModelNode.empty at root exec 'read_resource('proxies -> Console.out)
+```
+
+## Reading
+
+Reading properties from a model node will result in an `Option[ModelNode]`. Choose between the "/" operator as in
+`node / "foo"` (best for reading nested model nodes) or `node("foo")` (best for reading direct child nodes)
+
+```scala
+val node = ModelNode(
+  "level0" -> ModelNode(
+    "level1" -> ModelNode(
+      "level2" -> ModelNode(
+        "level3" -> ModelNode(
+          "level4" -> ModelNode("foo" -> "bar")
+        )
+      )
+    )
+  )
+)
+
+val n1 = node("level0")
+val n2 = node / "level0" / "level1" / "level2" / "level3"
+val n3 = for {
+  l0 <- node / "level0"
+  l1 <- l0 / "level1"
+  l2 <- l1 / "level2"
+} yield l2
+```
+
+Since the methods return `Option`s, reading nested model nodes is safe even if some children in the path do not exist.
+In this case `None` wil be returned:
+
+```scala
+val nope = node / "level0" / "oops" / "level2" / "level3"
+```
+
+## Writing
+
+Simple values can be set using `node("foo") = "bar"`. If "foo" doesn't exist it will be created and updated
+otherwise. As an alternative you can use the `<<` operator, which comes in handy if you want to add multiple
+key / value pairs:
+
+```scala
+val node = ModelNode.empty
+
+node("foo") = "bar"
+node << ("foo" -> "bar")
+
+node << (
+  "flag" -> true,
+  "hello" -> "world",
+  "answer" -> 42,
+  "child" -> ModelNode(
+    "inner-a" -> 123,
+    "inner-b" -> "test",
+    "deep-inside" -> ModelNode(
+      "foo" -> "bar"
+    ),
+    "deep-list" -> List(
+      ModelNode("one" -> 1),
+      ModelNode("two" -> 2),
+      ModelNode("three" -> 3)
+    )
+  )
+)
+```
+
+Reading and writing can also be combined in one call:
+
+```scala
+(node / "child" / "deep-inside") << ("foo" -> "xyz")
 ```
 
 ## Composites
 
-A composite is setup using the `composite(n: ModelNode, xn: ModelNode*)` factory method:
+A composite operation is setup using the `ModelNode.composite(n: ModelNode, xn: ModelNode*)` factory method:
 
 ```scala
-composite (
-  node @@ "/core-service=management/access=authorization" op read_resource(
-    recursive_depth -> 2),
-  node @@ "/core-service=management/access=authorization" op read_children_names(
+ModelNode.composite(
+  ModelNode.empty at ("core-service" -> "management") / ("access" -> "authorization") exec 'read_resource(
+    'recursive_depth -> 2),
+  ModelNode.empty at ("core-service" -> "management") / ("access" -> "authorization") exec 'read_children_names(
     'name -> "role-mapping"),
-  node @@ "/subsystem=mail/mail-session=*" op read_resource_description,
-  node @@ "/subsystem=datasources/data-source=ExampleDS" op 'disable,
-  node @@ "/core-service=platform-mbean/type=runtime" op read_attribute(
+  ModelNode.empty at ("subsystem" -> "mail") / ("mail-session" -> "*") exec 'read_resource_description,
+  ModelNode.empty at ("subsystem" -> "datasources") / ("data-source" -> "ExampleDS") exec 'disable ,
+  ModelNode.empty at ("core-service" -> "platform-mbean") / ("type" -> "runtime") exec 'read_attribute(
     'name -> "start-time")
 )
 ```
@@ -88,6 +183,6 @@ this:
 
 ```scala
 val client = connect()
-val rootResource = node @@ root op read_resource
+val rootResource = node @@ root exec 'read_resource
 val result = client.execute(rootResource.underlying)
 ```
