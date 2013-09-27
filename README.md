@@ -2,7 +2,7 @@
 
 Scala client library for DMR operations. Offers a DSL for creating DMR operations.
 
-## Usage
+## Getting started
 
 Start by using one of the factory methods in `org.jboss.dmr.scala.ModelNode`:
 
@@ -12,9 +12,9 @@ Start by using one of the factory methods in `org.jboss.dmr.scala.ModelNode`:
 Please make sure to import `org.jboss.dmr.scala.ModelNode._` and `org.jboss.dmr.scala.Operation.Predefs._` in order
 to take full advantage of the DSL.
 
-### Address
+## Address
 
-Use the `@@` operator to specify the address of the model node. The address can be specified as string or as
+Use the `at` method to specify the address of the model node. The address can be specified as string or as
 `Traversable[(String, String)]`
 
 ```scala
@@ -28,7 +28,7 @@ node @@ (("subsystem" -> "datasources") :: ("data-source" -> "ExampleDS") :: Nil
 node @@ "/subsystem=datasources/data-source="
 ```
 
-### Operations
+## Operations
 
 Operations are specified using the method `op(operation: Operation)`. An `Operation` is thereby defined by a
 `Symbol` and optional parameters. Each parameter is made up of another `Symbol` and a value. Using symbols
@@ -60,10 +60,10 @@ node @@ "/core-service=platform-mbean/type=runtime" op read_resource(
   Symbol("custom-parameter") -> "custom-value")
 
 // unsupported parameter values will throw an IllegalArgumentException
-node @@ root op read_resource('proxies -> Conole.out)
+node @@ root op read_resource('proxies -> Console.out)
 ```
 
-### Composites
+## Composites
 
 A composite is setup using the `composite(n: ModelNode, xn: ModelNode*)` factory method:
 
