@@ -183,6 +183,6 @@ this:
 
 ```scala
 val client = connect()
-val rootResource = node @@ root exec 'read_resource
+val rootResource = node at root exec 'read_resource
 val result = client.execute(rootResource.underlying)
 ```
