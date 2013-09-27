@@ -261,11 +261,11 @@ class ComplexModelNode(javaModelNode: JavaModelNode = new JavaModelNode()) exten
 
 /**
  * Holds empty implementations for [[org.jboss.dmr.scala.ModelNode.at()]] and [[org.jboss.dmr.scala.ModelNode.exec()]]
- * and offers simple conversions by mixin in [[org.jboss.dmr.scala.SimpleConversions]]
+ * and offers simple conversions by mixin in [[org.jboss.dmr.scala.ValueConversions]]
  *
  * @param javaModelNode the underlying Java [[org.jboss.dmr.ModelNode]]
  */
-class ValueModelNode(javaModelNode: JavaModelNode) extends ModelNode(javaModelNode) with SimpleConversions{
+class ValueModelNode(javaModelNode: JavaModelNode) extends ModelNode(javaModelNode) with ValueConversions{
 
   /** Nop - returns this value model undmodified */
   def at(address: Address): ModelNode = this

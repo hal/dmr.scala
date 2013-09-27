@@ -1,9 +1,7 @@
 package org.jboss.dmr.scala
 
-/**
- * @author Harald Pehl
- */
-trait SimpleConversions extends ModelNode {
+/** Conversions for [[org.jboss.dmr.scala.ValueModelNode]]s */
+trait ValueConversions extends ModelNode {
   def asBoolean() = underlying.asBoolean()
 
   def asInt() = underlying.asInt()

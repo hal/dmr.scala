@@ -1,9 +1,16 @@
 package org.jboss.dmr
 
 /**
- * @author Harald Pehl
+ * Provides classes for dealing with the management model of a WildFly instance.
+ *
+ * ==Overview==
+ * TODO
+ *
+ * ==Implicit Conversions==
+ * TODO
  */
 package object scala {
+  /** An empty address */
   val root = new Address(List())
 
   implicit def tupleToAddress(tuple: (String, String)) = new Address(List(tuple))

@@ -1,6 +1,9 @@
 package org.jboss.dmr.scala
 
-class Address(val tuples: List[(String, String)]) {
+/**
+ * Class for holding the address tuples for a model node
+ * @param tuples the address tuples
+ */
+case class Address(tuples: List[(String, String)]) {
   def /(address: Address) = new Address(tuples ++ address.tuples)
-  override def toString = tuples.toString()
 }

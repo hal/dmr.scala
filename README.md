@@ -1,6 +1,7 @@
 # DMR.scala
 
 Scala client library for DMR operations. Offers a DSL for creating DMR operations.
+For an introduction to DMR please refer to the [WildFly Wiki](https://docs.jboss.org/author/display/WFLY8/Detyped+management+and+the+jboss-dmr+library).
 
 ## Getting started
 
