@@ -6,6 +6,8 @@ scalaVersion := "2.10.2"
 
 scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature", "-language:implicitConversions")
 
+scalacOptions in (Compile, doc) += s"-doc-external-doc:${scalaInstance.value.libraryJar}#http://www.scala-lang.org/api/${scalaVersion.value}/"
+
 resolvers ++= Seq(
   "jboss repo" at "https://repository.jboss.org/nexus/content/groups/public/"
 )

@@ -53,10 +53,10 @@ object ModelNode {
 }
 
 /**
- * A Scala wrapper around a [[org.jboss.dmr.ModelNode]] offering methods to interact with model nodes in a more
+ * A Scala wrapper around a `org.jboss.dmr.ModelNode` offering methods to interact with model nodes in a more
  * natural way.
  *
- * @param javaModelNode the underlying Java [[org.jboss.dmr.ModelNode]]
+ * @param javaModelNode the underlying Java `org.jboss.dmr.ModelNode`
  */
 abstract class ModelNode(javaModelNode: JavaModelNode) {
 
@@ -113,7 +113,7 @@ abstract class ModelNode(javaModelNode: JavaModelNode) {
 
   /**
    * Returns an option for the nested model node with the specified key. In contrast to
-   * [[org.jboss.dmr.scala.ModelNode./()]] works best for direct children.
+   * [[org.jboss.dmr.scala.ModelNode#/]] works best for direct children.
    *
    * @param key the key of the nested model node
    * @return [[scala.Some]] if the nested model node exists, [[scala.None]] otherwise
@@ -162,16 +162,18 @@ abstract class ModelNode(javaModelNode: JavaModelNode) {
 
   /**
    * Sets the specified key to the given value. Supports the following types:
-   * $ - Boolean
-   * $ - Int
-   * $ - Long
-   * $ - BigInt
-   * $ - Float
-   * $ - Double
-   * $ - BigDecimal
-   * $ - String
-   * $ - ModelNode
-   * $ - Traversable[ModelNode]
+   * <ul>
+   * <li> Boolean
+   * <li> Int
+   * <li> Long
+   * <li> BigInt
+   * <li> Float
+   * <li> Double
+   * <li> BigDecimal
+   * <li> String
+   * <li> ModelNode
+   * <li> Traversable[ModelNode]
+   * </ul>
    *
    * @param name the name
    * @param value the value
@@ -235,9 +237,9 @@ abstract class ModelNode(javaModelNode: JavaModelNode) {
 }
 
 /**
- * Holds implementations which make sense for comples model nodes
+ * Implementation for complex model nodes.
  *
- * @param javaModelNode the underlying Java [[org.jboss.dmr.ModelNode]]
+ * @param javaModelNode the underlying Java `org.jboss.dmr.ModelNode`
  */
 class ComplexModelNode(javaModelNode: JavaModelNode = new JavaModelNode()) extends ModelNode(javaModelNode) {
 
@@ -260,10 +262,11 @@ class ComplexModelNode(javaModelNode: JavaModelNode = new JavaModelNode()) exten
 }
 
 /**
- * Holds empty implementations for [[org.jboss.dmr.scala.ModelNode.at()]] and [[org.jboss.dmr.scala.ModelNode.exec()]]
- * and offers simple conversions by mixin in [[org.jboss.dmr.scala.ValueConversions]]
+ * Implementation for value model nodes. Contains empty implementations for [[org.jboss.dmr.scala.ModelNode#at]] and
+ * [[org.jboss.dmr.scala.ModelNode#exec]] and offers simple conversions by mixing in
+ * [[org.jboss.dmr.scala.ValueConversions]]
  *
- * @param javaModelNode the underlying Java [[org.jboss.dmr.ModelNode]]
+ * @param javaModelNode the underlying Java `org.jboss.dmr.ModelNode`
  */
 class ValueModelNode(javaModelNode: JavaModelNode) extends ModelNode(javaModelNode) with ValueConversions{
 
