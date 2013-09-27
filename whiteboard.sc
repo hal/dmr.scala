@@ -65,11 +65,8 @@ n2 << ("another-list" -> List(ModelNode("foo" -> "bar"), ModelNode("aaa" -> 3)))
 n2("another-list") = List(ModelNode("foo" -> "bar"), ModelNode("aaa" -> 3))
 
 
-// traverse (child is Some[ModelNode]
+// traverse (result is Some[ModelNode])
 val child1 = n2 / "child"
-
-
-// traverse using for and Some[ModelNode]
 val child2 = for (res <- n2 / "child") yield res
 val deepInside = for {
   res1 <- n2 / "child"
@@ -77,9 +74,16 @@ val deepInside = for {
 } yield res2
 
 
+// process nested list
+for (node <- n2 / "child" / "deep-list") {
+//  node("")
+}
+
+
 // traverse using for and None[ModelNode]
-val nothing1 = for (res <- n2 / "child" / "gibts-doch-gar-net") yield res
-val nothing2 = for {
+val nothing1 = n2 / "child" / "gibts-doch-gar-net"
+val nothing2 = for (res <- n2 / "child" / "gibts-doch-gar-net") yield res
+val nothing3 = for {
   res1 <- n2 / "gibts-doch"
   res2 <- res1 / "gar-net"
 } yield res2
@@ -89,6 +93,11 @@ val nothing2 = for {
 (n2 / "child")("inner-c") = 55
 (n2 / "child" / "deep-inside") << ("foo" -> "xyz")
 println(s"Updated n2: $n2")
+
+
+// keys and values
+n2.keys.foreach(println)
+n2.values.foreach(tuple => println(s"Key ${tuple._1}: ${tuple._2}"))
 
 
 // composite
