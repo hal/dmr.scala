@@ -1,16 +1,30 @@
 package org.jboss.dmr.scala
 
-/** Conversions for [[org.jboss.dmr.scala.ValueModelNode]]s */
-trait ValueConversions extends ModelNode {
-  def asBoolean() = underlying.asBoolean()
+/** Provides methods to convert a model node to a simple value */
+trait ValueConversions {
+  this: ModelNode =>
 
-  def asInt() = underlying.asInt()
+  /** Returns the value of this nodel node as `Some(Boolean)` or `None` if the underlying node does not support conversion to `Boolean` */
+  def asBoolean: Option[Boolean] = safeAs(underlying.asBoolean)
 
-  def asLong() = underlying.asLong()
+  /** Returns the value of this nodel node as `Some(Int)` or `None` if the underlying node does not support conversion to `Int` */
+  def asInt: Option[Int] = safeAs(underlying.asInt)
 
-  def asBigInt() = underlying.asBigInteger()
+  /** Returns the value of this nodel node as `Some(Long)` or `None` if the underlying node does not support conversion to `Long` */
+  def asLong: Option[Long] = safeAs(underlying.asLong)
 
-  def asDouble() = underlying.asDouble()
+  /** Returns the value of this nodel node as `Some(BigInt)` or `None` if the underlying node does not support conversion to `BigInt` */
+  def asBigInt: Option[BigInt] = safeAs(underlying.asBigInteger)
 
-  def asString() = underlying.asString()
+  /** Returns the value of this nodel node as `Some(Double)` or `None` if the underlying node does not support conversion to `Double` */
+  def asDouble: Option[Double] = safeAs(underlying.asDouble)
+
+  /** Returns the value of this nodel node as `Some(String)` or `None` if the underlying node does not support conversion to `String` */
+  def asString: Option[String] = safeAs(underlying.asString)
+
+  private def safeAs[T](asMethod: () => T) = try {
+    Some(asMethod())
+  } catch {
+    case e: IllegalArgumentException => None
+  }
 }
