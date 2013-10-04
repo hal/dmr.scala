@@ -23,10 +23,10 @@ Use the factory methods in `org.jboss.dmr.scala.ModelNode` to create model nodes
 
 ```scala
 // creates an empty model node
-ModelNode.empty
+val node = ModelNode()
 
 // creates a new model node with structure
-ModelNode(
+val node = ModelNode(
   "flag" -> true,
   "hello" -> "world",
   "answer" -> 42,
@@ -126,7 +126,7 @@ the path do not exist. In this case `None` wil be returned:
 val nope = node("level0", "oops", "level2", "level3")
 ```
 
-### Reading Values
+## Reading Values
 
 You can use the folowing methods to read values from model nodes:
 

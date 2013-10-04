@@ -1,14 +1,21 @@
 package org.jboss.dmr.scala
 
+import scala.Some
+import scala.collection.TraversableLike
 import scala.collection.JavaConversions._
+import scala.collection.generic.CanBuildFrom
+import scala.collection.mutable.Builder
+import scala.collection.mutable.ListBuffer
 import org.jboss.dmr.{ModelNode => JavaModelNode}
 import org.jboss.dmr.ModelType._
+import org.jboss.dmr.scala.ModelNode.NodeTuple
 
 /** Factory for [[org.jboss.dmr.scala.ModelNode]] */
 object ModelNode {
 
-  /** Creates an empty model node */
-  def empty(): ModelNode = new ComplexModelNode()
+  type NodeTuple = (String, ModelNode)
+
+  object Undefined extends ComplexModelNode
 
   /**
    * Creates a new model node with the specified key / value pairs. Use this method to create a hirarchy of model
@@ -33,9 +40,9 @@ object ModelNode {
    *
    * @param tuples the key / value pairs
    */
-  def apply(tuples: (String, Any)*): ModelNode = {
-    val node = empty()
-    tuples.toList.foreach(tuple => node(tuple._1) = tuple._2)
+  def apply(kvs: (String, Any)*): ModelNode = {
+    val node = new ComplexModelNode()
+    kvs.toList.foreach(kv => node(kv._1) = kv._2)
     node
   }
 
@@ -46,10 +53,29 @@ object ModelNode {
    * @param xn additional model nodes
    */
   def composite(n: ModelNode, xn: ModelNode*): ModelNode = {
-    val node = empty exec 'composite
+    val node = new ComplexModelNode() exec 'composite
     node("steps") = List(n) ++ xn
     node
   }
+
+  def fromNodeTuples(kvs: List[NodeTuple]): ModelNode = {
+    println(s"in fromNodeTuples($kvs)")
+    val node = new ComplexModelNode()
+    kvs.toList.foreach(kv => node(kv._1) = kv._2)
+    node
+  }
+
+  implicit def canBuildFrom: CanBuildFrom[ModelNode, NodeTuple, ModelNode] =
+    new CanBuildFrom[ModelNode, NodeTuple, ModelNode] {
+      def apply(): Builder[NodeTuple, ModelNode] = newBuilder
+
+      def apply(from: ModelNode): Builder[NodeTuple, ModelNode] = newBuilder
+    }
+
+  def newBuilder: Builder[NodeTuple, ModelNode] = new ListBuffer mapResult fromNodeTuples
+
+
+  // TODO Add an extractor which can be used with pattern matching to check the result of an DMR operation
 }
 
 /**
@@ -58,7 +84,11 @@ object ModelNode {
  *
  * @param javaModelNode the underlying Java `org.jboss.dmr.ModelNode`
  */
-abstract class ModelNode(javaModelNode: JavaModelNode) extends ValueConversions /*with mutable.Map[String, ModelNode]*/ {
+abstract class ModelNode(javaModelNode: JavaModelNode)
+    extends Traversable[NodeTuple]
+        with TraversableLike[NodeTuple, ModelNode]
+//        with Builder[NodeTuple, ModelNode]
+        with ValueConversions {
 
   /** Returns the underlying Java mode node */
   def underlying = javaModelNode
@@ -81,6 +111,17 @@ abstract class ModelNode(javaModelNode: JavaModelNode) extends ValueConversions 
    * @return this model node with the operation set
    */
   def exec(operation: Operation): ModelNode
+
+  def apply(key: String): ModelNode = {
+    if (underlying.has(key)) {
+      val jchild = underlying.get(key)
+      if (isSimple(jchild)) new ValueModelNode(jchild) else new ComplexModelNode(jchild)
+    } else defaultValue
+  }
+
+  protected def defaultValue = ModelNode.Undefined
+
+  def get(key: String): Option[ModelNode] = find(key)
 
   /**
    * Returns an option for the nested model node with the specified key(s). You can specify multiple keys lookup deeply
@@ -111,16 +152,17 @@ abstract class ModelNode(javaModelNode: JavaModelNode) extends ValueConversions 
    * val nope = node("level0", "oops", "level2", "level3")
    * }}}
    *
-   * @param key the key(s) of the nested model node(s)
+   * @param key the key of the directly nested model node
+   * @param childKeys the keys of
    * @return [[scala.Some]] if the nested model node exists, [[scala.None]] otherwise
    */
-  def apply(key: String, childKeys: String*): Option[ModelNode] = {
+  def find(key: String, childKeys: String*): Option[ModelNode] = {
     if (underlying.has(key)) {
       val jchild = underlying.get(key)
       val child = if (isSimple(jchild)) new ValueModelNode(jchild) else new ComplexModelNode(jchild)
       childKeys.toList match {
         case Nil => Some(child)
-        case head :: tail => child(head, tail: _*) // call apply on child
+        case head :: tail => child.find(head, tail: _*) // call apply on child
       }
     } else None
   }
@@ -156,8 +198,6 @@ abstract class ModelNode(javaModelNode: JavaModelNode) extends ValueConversions 
     tuples.foreach(tuple => this(tuple._1) = tuple._2)
     this
   }
-
-
 
   /**
    * Sets the specified key to the given value. Supports the following types:
@@ -205,34 +245,41 @@ abstract class ModelNode(javaModelNode: JavaModelNode) extends ValueConversions 
     }
   }
 
-  /**
-   * Returns the keys for this model node. If this model node does not have any keys an empty set is returned
-   **/
-  def keys: Set[String] = {
+  /** Delegates to `underlying.toString` */
+  override def toString = underlying.toString
+
+  /** Returns the keys for this model node */
+  def keys: Iterable[String] = {
     underlying.getType match {
       case OBJECT => underlying.keys.toSet
       case _ => Set()
     }
   }
 
-  /**
-   * Returns the children of this model node as key / value pairs. If this model node does not have any children,
-   * an empty set is returned
-   **/
-  def values: Set[(String, ModelNode)] = {
-    underlying.getType match {
-      case OBJECT => underlying.asList().map(jnode => {
-        val name = jnode.asProperty().getName
-        val jvalue = jnode.asProperty().getValue
-        val node = if (isSimple(jvalue)) new ValueModelNode(jvalue) else new ComplexModelNode(jvalue)
-        name -> node
-      }).toSet
-      case _ => Set()
+  override def foreach[U](f: (NodeTuple) => U): Unit = {
+    val contents = underlying.getType match {
+      case OBJECT =>
+        underlying.asList().map(jnode => {
+          val jvalue = jnode.asProperty().getValue
+          val key = jnode.asProperty().getName
+          val value = if (isSimple(jvalue)) new ValueModelNode(jvalue) else new ComplexModelNode(jvalue)
+          (key, value)
+        })
+      case _ => Map.empty
     }
+    contents.foreach(f)
   }
 
-  /** Delegates to `underlying.toString` */
-  override def toString = underlying.toString
+  override protected[this] def newBuilder: Builder[NodeTuple, ModelNode] = ModelNode.newBuilder
+
+//  def +=(elem: NodeTuple): this.type = {
+//    this(elem._1) = elem._2
+//    this
+//  }
+//
+//  def clear(): Unit = underlying.clear()
+//
+//  def result(): ModelNode = this
 }
 
 /**

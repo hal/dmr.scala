@@ -3,7 +3,7 @@ import org.jboss.dmr.scala.ModelNode
 
 
 // DSL
-val dropOp = ModelNode.empty at ("subsystem" -> "ee") / ("foo" -> "bar") exec 'drop(
+val dropOp = ModelNode() at ("subsystem" -> "ee") / ("foo" -> "bar") exec 'drop(
   'param_1 -> true,
   'param_2 -> "doit"
 )
@@ -30,7 +30,7 @@ val n1 = ModelNode(
 
 
 // set simple property using update()
-val n2 = ModelNode.empty()
+val n2 = ModelNode()
 n2("simple") = "0815"
 
 
@@ -66,40 +66,27 @@ n2("another-list") = List(ModelNode("foo" -> "bar"), ModelNode("aaa" -> 3))
 
 
 // traverse (result is Some[ModelNode])
-val child1 = n2 / "child"
-val child2 = for (res <- n2 / "child") yield res
+val child1 = n2("child")
+val child2 = for (res <- n2.get("child")) yield res
 val deepInside = for {
-  res1 <- n2 / "child"
-  res2 <- res1 / "deep-inside"
+  res1 <- n2.get("child")
+  res2 <- res1.get("deep-inside")
 } yield res2
-
-
-// process nested list
-for (node <- n2 / "child" / "deep-list") {
-//  node("")
-}
 
 
 // traverse using for and None[ModelNode]
-val nothing1 = n2 / "child" / "gibts-doch-gar-net"
-val nothing2 = for (res <- n2 / "child" / "gibts-doch-gar-net") yield res
+val nothing1 = n2.find("child", "gibts-doch-gar-net")
+val nothing2 = for (res <- n2.find("child", "gibts-doch-gar-net")) yield res
 val nothing3 = for {
-  res1 <- n2 / "gibts-doch"
-  res2 <- res1 / "gar-net"
+  res1 <- n2.get("gibts-doch")
+  res2 <- res1.get("gar-net")
 } yield res2
-
-
-// traversing and setting values (looks strange)
-(n2 / "child")("inner-c") = 55
-(n2 / "child" / "deep-inside") << ("foo" -> "xyz")
-println(s"Updated n2: $n2")
 
 
 // keys and values
 n2.keys.foreach(println)
-n2.values.foreach(tuple => println(s"Key ${tuple._1}: ${tuple._2}"))
+n2.foreach(tuple => println(s"Key ${tuple._1}: ${tuple._2}"))
 
 
 // composite
 val c = ModelNode.composite(n1, n2)
-
