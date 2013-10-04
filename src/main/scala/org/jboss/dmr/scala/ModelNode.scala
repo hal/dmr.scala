@@ -58,7 +58,7 @@ object ModelNode {
  *
  * @param javaModelNode the underlying Java `org.jboss.dmr.ModelNode`
  */
-abstract class ModelNode(javaModelNode: JavaModelNode) {
+abstract class ModelNode(javaModelNode: JavaModelNode) extends ValueConversions /*with mutable.Map[String, ModelNode]*/ {
 
   /** Returns the underlying Java mode node */
   def underlying = javaModelNode
@@ -83,50 +83,44 @@ abstract class ModelNode(javaModelNode: JavaModelNode) {
   def exec(operation: Operation): ModelNode
 
   /**
-   * Returns an option for the nested model node with the specified key. You can chain calls to "/" to lookup deeply
+   * Returns an option for the nested model node with the specified key(s). You can specify multiple keys lookup deeply
    * nested model nodes:
    * {{{
    * val node = ModelNode(
-   *   "level0" -> ModelNode(
-   *     "level1" -> ModelNode(
-   *       "level2" -> ModelNode(
-   *         "level3" -> ModelNode(
-   *           "level4" -> ModelNode("foo" -> "bar")
-   *         )
-   *       )
+   *   "flag" -> true,
+   *   "hello" -> "world",
+   *   "answer" -> 42,
+   *   "child" -> ModelNode(
+   *     "inner-a" -> 123,
+   *     "inner-b" -> "test",
+   *     "deep-inside" -> ModelNode("foo" -> "bar"),
+   *     "deep-list" -> List(
+   *       ModelNode("one" -> 1),
+   *       ModelNode("two" -> 2),
+   *       ModelNode("three" -> 3)
    *     )
    *   )
    * )
-   * val level3 = node / "level0" / "level1" / "level2" / "level3"
+   * val flag = node("flag")
+   * val level3 = node("level0", "level1", "level2", "level3")
    * }}}
    *
    * The method is safe to call for children that does not exist in the path. In this case [[scala.None]] wil be
    * returned:
    * {{{
-   * val nope = node / "level0" / "level10" / "level2" / "level3"
+   * val nope = node("level0", "oops", "level2", "level3")
    * }}}
    *
-   * @param key the key of the nested model node
+   * @param key the key(s) of the nested model node(s)
    * @return [[scala.Some]] if the nested model node exists, [[scala.None]] otherwise
    */
-  def /(key: String): Option[ModelNode] = lookup(key)
-
-  /**
-   * Returns an option for the nested model node with the specified key. In contrast to
-   * [[org.jboss.dmr.scala.ModelNode#/]] works best for direct children.
-   *
-   * @param key the key of the nested model node
-   * @return [[scala.Some]] if the nested model node exists, [[scala.None]] otherwise
-   */
-  def apply(key: String): Option[ModelNode] = lookup(key)
-
-  protected def lookup(key: String) = {
+  def apply(key: String, childKeys: String*): Option[ModelNode] = {
     if (underlying.has(key)) {
       val jchild = underlying.get(key)
-      if (isSimple(jchild)) {
-        Some(new ValueModelNode(jchild))
-      } else {
-        Some(new ComplexModelNode(jchild))
+      val child = if (isSimple(jchild)) new ValueModelNode(jchild) else new ComplexModelNode(jchild)
+      childKeys.toList match {
+        case Nil => Some(child)
+        case head :: tail => child(head, tail: _*) // call apply on child
       }
     } else None
   }
@@ -139,7 +133,7 @@ abstract class ModelNode(javaModelNode: JavaModelNode) {
   /**
    * Adds multiple name / value pairs to this model node. Use this method to add a hirarchy of model nodes:
    * {{{
-   * node << (
+   * node += (
    *   "flag" -> true,
    *   "hello" -> "world",
    *   "answer" -> 42,
@@ -158,7 +152,12 @@ abstract class ModelNode(javaModelNode: JavaModelNode) {
    *
    * @param tuples the name / value pairs
    */
-  def <<(tuples: (String, Any)*) = tuples.foreach(tuple => this(tuple._1) = tuple._2)
+  def +=(tuples: (String, Any)*): ModelNode = {
+    tuples.foreach(tuple => this(tuple._1) = tuple._2)
+    this
+  }
+
+
 
   /**
    * Sets the specified key to the given value. Supports the following types:
@@ -193,7 +192,7 @@ abstract class ModelNode(javaModelNode: JavaModelNode) {
       case node: ModelNode => underlying.get(name).set(node.underlying)
       case values: Traversable[_] => {
         try {
-          // only list of model nodes are supported!
+          // only colections of model nodes are supported!
           val nodes = values.asInstanceOf[Traversable[ModelNode]]
           val javaNodes = nodes.toList.map(_.underlying)
           javaModelNode.get(name).set(javaNodes)
@@ -208,7 +207,7 @@ abstract class ModelNode(javaModelNode: JavaModelNode) {
 
   /**
    * Returns the keys for this model node. If this model node does not have any keys an empty set is returned
-   * */
+   **/
   def keys: Set[String] = {
     underlying.getType match {
       case OBJECT => underlying.keys.toSet
@@ -219,7 +218,7 @@ abstract class ModelNode(javaModelNode: JavaModelNode) {
   /**
    * Returns the children of this model node as key / value pairs. If this model node does not have any children,
    * an empty set is returned
-   * */
+   **/
   def values: Set[(String, ModelNode)] = {
     underlying.getType match {
       case OBJECT => underlying.asList().map(jnode => {
@@ -263,12 +262,11 @@ class ComplexModelNode(javaModelNode: JavaModelNode = new JavaModelNode()) exten
 
 /**
  * Implementation for value model nodes. Contains empty implementations for [[org.jboss.dmr.scala.ModelNode#at]] and
- * [[org.jboss.dmr.scala.ModelNode#exec]] and offers simple conversions by mixing in
- * [[org.jboss.dmr.scala.ValueConversions]]
+ * [[org.jboss.dmr.scala.ModelNode#exec]].
  *
  * @param javaModelNode the underlying Java `org.jboss.dmr.ModelNode`
  */
-class ValueModelNode(javaModelNode: JavaModelNode) extends ModelNode(javaModelNode) with ValueConversions{
+class ValueModelNode(javaModelNode: JavaModelNode) extends ModelNode(javaModelNode) {
 
   /** Nop - returns this value model undmodified */
   def at(address: Address): ModelNode = this

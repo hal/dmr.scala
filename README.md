@@ -88,13 +88,16 @@ ModelNode.empty at ("core-service" -> "platform-mbean") / ("type" -> "runtime") 
 ModelNode.empty at root exec 'read_resource('proxies -> Console.out)
 ```
 
-## Reading
+## Reading Nodes
 
-Reading properties from a model node will result in an `Option[ModelNode]`. Choose between the "/" operator as in
-`node / "foo"` (best for reading nested model nodes) or `node("foo")` (best for reading direct child nodes)
+Reading properties from a model node will result in an `Option[ModelNode]`. Use `node("key")` to read a direct child
+node or `node("path", "to", "child", "note")` to read nested model nodes.
 
 ```scala
 val node = ModelNode(
+  "flag" -> true,
+  "hello" -> "world",
+  "answer" -> 42,
   "level0" -> ModelNode(
     "level1" -> ModelNode(
       "level2" -> ModelNode(
@@ -106,35 +109,61 @@ val node = ModelNode(
   )
 )
 
-val n1 = node("level0")
-val n2 = node / "level0" / "level1" / "level2" / "level3"
-val n3 = for {
-  l0 <- node / "level0"
-  l1 <- l0 / "level1"
-  l2 <- l1 / "level2"
+val flag = node("flag")
+val level0 = node("level0")
+val level3 = node("level0", "level1", "level2", "level3")
+val level2 = for {
+  l0 <- node("level0")
+  l1 <- l0("level1")
+  l2 <- l1("level2")
 } yield l2
 ```
 
-Since the methods return `Option`s, reading nested model nodes is safe even if some children in the path do not exist.
-In this case `None` wil be returned:
+Since the result of `node("key")` is `Option[ModelNode]`, reading nested model nodes is safe even if some children in
+the path do not exist. In this case `None` wil be returned:
 
 ```scala
-val nope = node / "level0" / "oops" / "level2" / "level3"
+val nope = node("level0", "oops", "level2", "level3")
+```
+
+### Reading Values
+
+You can use the folowing methods to read values from model nodes:
+
+- `ModelNode.asBoolean`
+- `ModelNode.asInt`
+- `ModelNode.asLong`
+- `ModelNode.asBigInt`
+- `ModelNode.asDouble`
+- `ModelNode.asString`
+
+The methods return `Option` instances of the relevant type. This is because not all methods make sense on all kind of
+model nodes:
+
+```scala
+val node = ModelNode(
+  "flag" -> true,
+  "child" -> ModelNode(
+    "size" -> 0
+  )
+)
+
+val nonsense = node("child").get.asDouble
 ```
 
 ## Writing
 
 Simple values can be set using `node("foo") = "bar"`. If "foo" doesn't exist it will be created and updated
-otherwise. As an alternative you can use the `<<` operator, which comes in handy if you want to add multiple
+otherwise. As an alternative you can use the `+=` operator, which comes in handy if you want to add multiple
 key / value pairs:
 
 ```scala
 val node = ModelNode.empty
 
 node("foo") = "bar"
-node << ("foo" -> "bar")
+node += ("foo" -> "bar")
 
-node << (
+node += (
   "flag" -> true,
   "hello" -> "world",
   "answer" -> 42,
@@ -156,7 +185,7 @@ node << (
 Reading and writing can also be combined in one call:
 
 ```scala
-(node / "child" / "deep-inside") << ("foo" -> "xyz")
+node("child", "deep-inside").get += ("foo" -> "xyz")
 ```
 
 ## Composites

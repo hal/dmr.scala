@@ -35,7 +35,7 @@ n2("simple") = "0815"
 
 
 // set multiple properties using << operator
-n2 << (
+n2 += (
   "flag" -> true,
   "hello" -> "world",
   "answer" -> 42,
@@ -55,13 +55,13 @@ n2 << (
 
 
 // << operator with one tuple is the same as update()
-n2 << ("simple" -> 123)
+n2 += ("simple" -> 123)
 n2("simple") = 123
 
-n2 << ("another-child2" -> ModelNode("wom" -> "bat"))
+n2 += ("another-child2" -> ModelNode("wom" -> "bat"))
 n2("another-child2") = ModelNode("wom" -> "bat")
 
-n2 << ("another-list" -> List(ModelNode("foo" -> "bar"), ModelNode("aaa" -> 3)))
+n2 += ("another-list" -> List(ModelNode("foo" -> "bar"), ModelNode("aaa" -> 3)))
 n2("another-list") = List(ModelNode("foo" -> "bar"), ModelNode("aaa" -> 3))
 
 
