@@ -4,7 +4,10 @@ import org.jboss.dmr.scala.Operation.Parameter
 
 /** Holds a type alias for the parameters */
 object Operation {
+
   type Parameter[Any] = (Symbol, Any)
+
+  def apply(name: Symbol) = new Operation(name)
 }
 
 /**
@@ -22,6 +25,7 @@ object Operation {
  * @param n The name of the operator as symbol.
  */
 class Operation(val n: Symbol) {
+
   val name = Symbol(n.name.replace('_', '-'))
   var params = List.empty[Parameter[_]]
 

@@ -16,10 +16,13 @@ package org.jboss.dmr
  * model node instances.
  * {{{
  * // creates an empty model node
- * ModelNode.empty
+ * val node = ModelNode()
+ *
+ * // created a new model node holding a simple value
+ * val node = ModelNode(42)
  *
  * // creates a new model node with structure
- * ModelNode(
+ * val node = ModelNode(
  *   "flag" -> true,
  *   "hello" -> "world",
  *   "answer" -> 42,
@@ -40,7 +43,7 @@ package org.jboss.dmr
  * You can use a DSL like API to set the address and operation for a model node. To describe the "read-resource"
  * operation on "/subsystem=datasources/data-source=ExampleDS" use the following code:
  * {{{
- * ModelNode.empty at ("subsystem" -> "datasources") / ("data-source" -> "ExampleDS") exec 'read_resource(
+ * ModelNode() at ("subsystem" -> "datasources") / ("data-source" -> "ExampleDS") exec 'read_resource(
  *   'include_runtime -> false,
  *   'recursive_depth -> 2
  * )
@@ -54,19 +57,19 @@ package org.jboss.dmr
  * therefore an illegal symbol. As most DMR operations and many parameters do contain "-", this library will replace
  * all underscores in a symbol with dashes:
  * {{{
- * ModelNode.empty exec 'read_resource('include_runtime -> true)
+ * ModelNode() exec 'read_resource('include_runtime -> true)
  * // is exactly the same as
- * ModelNode.empty exec Symbol("read-resource")(Symbol("include-runtime") -> true)
+ * ModelNode() exec Symbol("read-resource")(Symbol("include-runtime") -> true)
  * }}}
  *
  * Here are some more examples using addresses and operations:
  * {{{
  * // root is a constant for an empty address
- * ModelNode.empty at root exec 'read_resource
- * ModelNode.empty at ("subsystem" -> "datasources") / ("data-source" -> "ExampleDS") exec 'disable
+ * ModelNode() at root exec 'read_resource
+ * ModelNode() at ("subsystem" -> "datasources") / ("data-source" -> "ExampleDS") exec 'disable
  *
  * // parameters are specified as pairs (Symbol -> Any)
- * ModelNode.empty at ("core-service" -> "platform-mbean") / ("type" -> "runtime") exec 'read_resource(
+ * ModelNode() at ("core-service" -> "platform-mbean") / ("type" -> "runtime") exec 'read_resource(
  *   'attributes_only -> true,
  *   'include_runtime -> false,
  *   'recursive_depth -> 3,
@@ -74,13 +77,15 @@ package org.jboss.dmr
  * )
  *
  * // unsupported parameter types will throw an IllegalArgumentException
- * ModelNode.empty at root exec 'read_resource('proxies -> Console.out)
+ * ModelNode() at root exec 'read_resource('proxies -> Console.out)
  * }}}
  *
  * ==Reading Nodes==
- * Reading properties from a model node will result in an [[scala.Option[ModelNode]]]. Use `node("key")` to read a
- * direct child node or `node("path", "to", "child", "note")` to read nested model nodes.
+ * Reading values from a model node follows the sementics of a `Map[String, ModelNode]`, but instead of a string you
+ * provide a [[org.jboss.dmr.scala.Path]] as key. Thanks to an implicit conversion expression like `"a" / "b" / "c"`
+ * are automatically converted to a path.
  *
+ * Here are some examples using the different method styles:
  * {{{
  * val node = ModelNode(
  *   "flag" -> true,
@@ -98,19 +103,22 @@ package org.jboss.dmr
  * )
  *
  * val flag = node("flag")
- * val level0 = node("level0")
- * val level3 = node("level0", "level1", "level2", "level3")
+ * val boom = node("gag") // throws a NoSuchelementException
+ * val hello = node.get("hello") // returns an Option[ModelNode]
+ * val x = node.getOrElse("nope", ModelNode("y"))
+ * val check = node.contains("level0" / "level1" / "level2" / "level3")
+ * val level3 = node("level0" / "level1" / "level2" / "level3")
  * val level2 = for {
- *   l0 <- node("level0")
- *   l1 <- l0("level1")
- *   l2 <- l1("level2")
+ *   l0 <- node.get("level0")
+ *   l1 <- l0.get("level1")
+ *   l2 <- l1.get("level2")
  * } yield l2
  * }}}
  *
- * Since the result of `node("key")` is `Option[ModelNode]`, reading nested model nodes is safe even if some children in
- * the path do not exist. In this case `None` wil be returned:
+ * Since the result of `node.get("a" / "b" / "c")` is `Option[ModelNode]`, reading nested model nodes is safe even
+ * if some children in the path do not exist. In this case `None` wil be returned:
  * {{{
- * val nope = node("level0", "oops", "level2", "level3")
+ * val nope = node.get("level0", "oops", "level2", "level3")
  * }}}
  *
  * ==Reading Values==
@@ -123,8 +131,8 @@ package org.jboss.dmr
  *   <li> `ModelNode.asDouble`
  *   <li> `ModelNode.asString`
  * </ul>
- * The methods return `Option` instances of the relevant type. This is because not all methods make sense on all kind of
- * model nodes:
+ * These methods return `Option` instances of the relevant type. This is because not all methods make sense on all
+ * kind of model nodes:
  * {{{
  * val node = ModelNode(
  *   "flag" -> true,
@@ -133,7 +141,7 @@ package org.jboss.dmr
  *   )
  * )
  *
- * val nonsense = node("child").get.asDouble
+ * val nonsense = node("child").asDouble
  * }}}
  *
  *
@@ -142,7 +150,7 @@ package org.jboss.dmr
  * otherwise. As an alternative you can use the `+=` operator, which comes in handy if you want to add multiple
  * key / value pairs:
  * {{{
- * val node = ModelNode.empty
+ * val node = ModelNode()
  *
  * node("foo") = "bar"
  * node += ("foo" -> "bar")
@@ -166,7 +174,7 @@ package org.jboss.dmr
  *
  * Reading and writing can also be combined in one call:
  * {{{
- * node("child", "deep-inside").get += ("foo" -> "xyz")
+ * node("child" / "deep-inside") += ("foo" -> "xyz")
  * }}}
  *
  * ==Composites==
@@ -190,14 +198,17 @@ package org.jboss.dmr
  * <ul>
  * <li> `(String, String)` to [[org.jboss.dmr.scala.Address]]
  * <li> [[scala.Symbol]] to [[org.jboss.dmr.scala.Operation]]
+ * <li> String to [[org.jboss.dmr.scala.Path]]
  * </ul>
  *
  */
 package object scala {
   /** An empty address */
-  val root = new Address(List())
+  val root = Address(List())
 
-  implicit def tupleToAddress(tuple: (String, String)) = new Address(List(tuple))
+  implicit def tupleToAddress(tuple: (String, String)) = Address(List(tuple))
 
-  implicit def symbolToOperation(name: Symbol) = new Operation(name)
+  implicit def symbolToOperation(name: Symbol) = Operation(name)
+
+  implicit def stringToPath(element: String) = Path(List(element))
 }
