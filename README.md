@@ -25,7 +25,7 @@ Use the factory methods in `org.jboss.dmr.scala.ModelNode` to create model nodes
 // creates an empty model node
 val node = ModelNode()
 
-// created a new model node holding a simple value
+// creates a new model node holding a simple value
 val node = ModelNode(42)
 
 // creates a new model node with structure
@@ -96,8 +96,6 @@ ModelNode() at root exec 'read_resource('proxies -> Console.out)
 Reading values from a model node follows the sementics of a `Map[String, ModelNode]`, but instead of a string you
 provide a `Path` as key. Thanks to an implicit conversion expression like `"a" / "b" / "c"` are automatically converted
 to a path.
-
-Here are some examples using the different method styles:
 
 ```scala
 val node = ModelNode(
@@ -195,6 +193,25 @@ Reading and writing can also be combined in one call:
 
 ```scala
 node("child" / "deep-inside") += ("foo" -> "xyz")
+```
+
+## ModelNode as Collection
+
+Since `ModelNode` mixes in `Traversable[(String, ModelNode)]` you can use all those nifty collection methodslike
+`foreach`, `map`, `flatMap`, ...
+
+```
+val node = ModelNode(
+  "flag" -> true,
+  "hello" -> "world",
+  "answer" -> 42
+)
+
+// turn all keys to upper case
+node.map(kv => (kv._1.toUpperCase, kv._2))
+
+// combine nodes
+val node2 = node ++ ModelNode("abc" -> 1)
 ```
 
 ## Composites

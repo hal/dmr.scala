@@ -91,8 +91,9 @@ object ModelNode {
  *
  * @param javaModelNode the underlying Java `org.jboss.dmr.ModelNode`
  */
-abstract class ModelNode(javaModelNode: JavaModelNode) extends
-    TraversableLike[NodeTuple, ModelNode]
+abstract class ModelNode(javaModelNode: JavaModelNode)
+    extends Traversable[NodeTuple]
+    with TraversableLike[NodeTuple, ModelNode]
     with ValueConversions {
 
   /** Returns the underlying Java mode node */
@@ -236,14 +237,14 @@ abstract class ModelNode(javaModelNode: JavaModelNode) extends
   override def toString() = underlying.toString
 
   /** Returns the keys for this model node */
-  def keys: Iterable[String] = map(_._1).toIterable
+//  def keys: Iterable[String] = map(kv => kv._1)
 
   /** Returns the values for this model node */
-  def values: Iterable[ModelNode] = map(_._2).toIterable
+//  def values: Iterable[ModelNode] = map(_._2).toIterable
 
   override def foreach[U](f: (NodeTuple) => U): Unit = contents.foreach(f)
 
-  override def seq: TraversableOnce[NodeTuple] = contents
+//  override def seq: TraversableOnce[NodeTuple] = contents
 
   override protected[this] def newBuilder: Builder[NodeTuple, ModelNode] = ModelNode.newBuilder
 
