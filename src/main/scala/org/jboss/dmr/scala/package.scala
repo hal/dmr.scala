@@ -176,8 +176,8 @@ package org.jboss.dmr
  * }}}
  *
  * ==ModelNode as Collection==
- * Since [[org.jboss.dmr.scala.ModelNode]] mixes in [[scala.collection.Traversable[(String, ModelNode)]]]` you can use
- * all those nifty collection methodslike `foreach`, `map`, `flatMap`, ...
+ * Since [[org.jboss.dmr.scala.ModelNode]] mixes in [[scala.collection.Traversable[(String, ModelNode)]]] you can use
+ * all those nifty collection methods like `foreach`, `map` or `filter`
  * {{{
  * val node = ModelNode(
  *   "flag" -> true,
@@ -187,6 +187,10 @@ package org.jboss.dmr
  *
  * // turn all keys to upper case
  * node.map(kv => (kv._1.toUpperCase, kv._2))
+ *
+ * // filter nodes
+ * node.filter(_._1 contains "a")
+ * node.filter(_._2 == ModelNode(42))
  *
  * // combine nodes
  * val node2 = node ++ ModelNode("abc" -> 1)

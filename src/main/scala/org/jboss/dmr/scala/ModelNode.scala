@@ -89,6 +89,8 @@ object ModelNode {
  * This class uses some of the semantics and methods of [[scala.collection.Map]] while mixing
  * in [[scala.collection.TraversableLike]] which turns it into a collection of [[(String, ModelNode)]] tuples.
  *
+ * TODO flatMap does not work
+ *
  * @param javaModelNode the underlying Java `org.jboss.dmr.ModelNode`
  */
 abstract class ModelNode(javaModelNode: JavaModelNode)
@@ -233,14 +235,23 @@ abstract class ModelNode(javaModelNode: JavaModelNode)
     }
   }
 
+  /** Delegates to `uderlying.hashCode()` */
+  override def hashCode(): Int = underlying.hashCode()
+
+  /** Delegates to `underlying.equals()` if `obj` is also a model node, returns false otherwise */
+  override def equals(obj: Any): Boolean = obj match {
+    case node: ModelNode => underlying.equals(node.underlying)
+    case _ => false
+  }
+
   /** Delegates to `underlying.toString` */
   override def toString() = underlying.toString
 
   /** Returns the keys for this model node */
-//  def keys: Iterable[String] = map(kv => kv._1)
+  def keys: Iterable[String] = contents.map(_._1)
 
   /** Returns the values for this model node */
-//  def values: Iterable[ModelNode] = map(_._2).toIterable
+  def values: Iterable[ModelNode] = contents.map(_._2)
 
   override def foreach[U](f: (NodeTuple) => U): Unit = contents.foreach(f)
 
