@@ -186,11 +186,11 @@ package org.jboss.dmr
  * )
  *
  * // turn all keys to upper case
- * node.map(kv => (kv._1.toUpperCase, kv._2))
+ * val shout = node.map(kv => kv._1.toUpperCase -> kv._2)
  *
  * // filter nodes
- * node.filter(_._1 contains "a")
- * node.filter(_._2 == ModelNode(42))
+ * val aa = node.filter(_._1 contains "a")
+ * val n42 = node.filter(_._2 == ModelNode(42))
  *
  * // combine nodes
  * val node2 = node ++ ModelNode("abc" -> 1)
@@ -209,7 +209,7 @@ package org.jboss.dmr
  *   ModelNode.empty at ("core-service" -> "platform-mbean") / ("type" -> "runtime") exec 'read_attribute(
  *     'name -> "start-time")
  * )
- * }}}
+ *
  *
  * ==Implicit Conversions==
  * This package contains the following implicit conversions which are used to support a DSL like API:

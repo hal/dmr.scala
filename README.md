@@ -208,11 +208,11 @@ val node = ModelNode(
 )
 
 // turn all keys to upper case
-node.map(kv => (kv._1.toUpperCase, kv._2))
+val shout = node.map(kv => kv._1.toUpperCase -> kv._2)
 
 // filter for nodes
-node.filter(_._1 contains "a")
-node.filter(_._2 == ModelNode(42))
+val aa = node.filter(_._1 contains "a")
+val n42 = node.filter(_._2 == ModelNode(42))
 
 // combine nodes
 val node2 = node ++ ModelNode("abc" -> 1)
