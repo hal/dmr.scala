@@ -255,8 +255,6 @@ abstract class ModelNode(javaModelNode: JavaModelNode)
 
   override def foreach[U](f: (NodeTuple) => U): Unit = contents.foreach(f)
 
-//  override def seq: TraversableOnce[NodeTuple] = contents
-
   override protected[this] def newBuilder: Builder[NodeTuple, ModelNode] = ModelNode.newBuilder
 
   private def contents: List[NodeTuple] = underlying.getType match {
