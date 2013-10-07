@@ -13,6 +13,9 @@ import org.jboss.dmr.scala.ModelNode.NodeTuple
 /** Factory for [[org.jboss.dmr.scala.ModelNode]] */
 object ModelNode {
 
+  val Failed = "failed"
+  val Success = "success"
+
   type NodeTuple = (String, ModelNode)
 
   object Undefined extends ComplexModelNode
@@ -79,15 +82,41 @@ object ModelNode {
 
   def newBuilder: Builder[NodeTuple, ModelNode] = new ListBuffer().mapResult(kvs => new ComplexModelNode() += (kvs: _*))
 
-  // TODO Add an extractor which can be used with pattern matching to check the result of a DMR operation
+  /**
+   * Extractor for matching the result of a DMR operation.
+   *
+   * {{{
+   * val node = ... // a model node returned by some DMR operation
+   * node match {
+   *   case ModelNode(Success, result) => println(s"Successful DMR operation: $result")
+   *   case ModelNode(Failed, failure) => println(s"DMR operation failed: $failure")
+   *   case _ => println("Undefined result")
+   * }
+   * }}}
+   *
+   * @param node the node to match
+   * @return the matched patterns
+   */
+  def unapply(node: ModelNode): Option[(String, ModelNode)] = {
+    val outcome = for {
+      outcomeNode <- node.get("outcome")
+      outcomeValue <- outcomeNode.asString
+    } yield outcomeValue
+    outcome match {
+      case Some(Success) => Some(Success -> node.getOrElse("result", Undefined))
+      case Some(Failed) => Some(Failed -> node.getOrElse("failure-description", ModelNode("No failure-description provided")))
+      case Some(undefined) => None
+      case None => None
+    }
+  }
 }
 
 /**
- * A Scala wrapper around a `org.jboss.dmr.ModelNode` offering methods to interact with model nodes in a more
+ * A Scala wrapper around a `org.jboss.dmr.ModelNode` providing methods to interact with model nodes in a more
  * natural way.
  *
  * This class uses some of the semantics and methods of [[scala.collection.Map]] while mixing
- * in [[scala.collection.TraversableLike]] which turns it into a collection of [[(String, ModelNode)]] tuples.
+ * in [[scala.collection.TraversableLike]] which turns a model node into a collection of [[(String, ModelNode)]] tuples.
  *
  * @param javaModelNode the underlying Java `org.jboss.dmr.ModelNode`
  */
@@ -119,7 +148,7 @@ abstract class ModelNode(javaModelNode: JavaModelNode)
   def exec(operation: Operation): ModelNode
 
   /**
-   * Returns the model node associated with a path, or throws a [[java.util.NoSuchElementException]] if the path is
+   * Returns the model node associated with a path, or throws a `NoSuchElementException` if the path is
    * not contained in the model node.
    */
   def apply(path: Path): ModelNode = getOrElse(path, throw new NoSuchElementException)
