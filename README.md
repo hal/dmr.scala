@@ -92,8 +92,8 @@ ModelNode() at root exec 'read_resource('proxies -> Console.out)
 
 ## Reading Nodes
 
-Reading values from a model node follows the sementics of a `Map[String, ModelNode]`, but instead of a string you
-provide a `Path` as key. Thanks to an implicit conversion expression like `"a" / "b" / "c"` are automatically converted
+Reading values from a model node follows the sementics of a `Map[String, ModelNode]`, but instead of a string you have to 
+provide a `Path` as key. Thanks to an implicit conversion expressions like `"a" / "b" / "c"` are automatically converted
 to a path.
 
 ```scala
@@ -143,7 +143,7 @@ You can use the folowing methods to read values from model nodes:
 - `ModelNode.asDouble`
 - `ModelNode.asString`
 
-These methods return `Option` instances of the relevant type. This is because not all methods make sense on all kind of
+These methods return `Option` instances of the relevant type. This is because not all conversions make sense on all kind of
 model nodes:
 
 ```scala
@@ -154,7 +154,7 @@ val node = ModelNode(
   )
 )
 
-val nonsense = node("child").asDouble
+val nonsense = node("child").asDouble // None
 ```
 
 ## Writing
