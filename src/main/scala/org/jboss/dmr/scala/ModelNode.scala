@@ -10,11 +10,14 @@ import org.jboss.dmr.{ModelNode => JavaModelNode}
 import org.jboss.dmr.ModelType._
 import org.jboss.dmr.scala.ModelNode.NodeTuple
 
-/** Factory for [[org.jboss.dmr.scala.ModelNode]] */
-object ModelNode {
-
+/** Response constants */
+object Response {
   val Failed = "failed"
   val Success = "success"
+}
+
+/** Factory for [[org.jboss.dmr.scala.ModelNode]] */
+object ModelNode {
 
   type NodeTuple = (String, ModelNode)
 
@@ -68,7 +71,7 @@ object ModelNode {
    * @param xn additional model nodes
    */
   def composite(n: ModelNode, xn: ModelNode*): ModelNode = {
-    val node = new ComplexModelNode() exec 'composite
+    val node = new ComplexModelNode() op 'composite
     node("steps") = List(n) ++ xn
     node
   }
@@ -103,8 +106,8 @@ object ModelNode {
       outcomeValue <- outcomeNode.asString
     } yield outcomeValue
     outcome match {
-      case Some(Success) => Some(Success -> node.getOrElse("result", Undefined))
-      case Some(Failed) => Some(Failed -> node.getOrElse("failure-description", ModelNode("No failure-description provided")))
+      case Some(Response.Success) => Some(Response.Success -> node.getOrElse("result", Undefined))
+      case Some(Response.Failed) => Some(Response.Failed -> node.getOrElse("failure-description", ModelNode("No failure-description provided")))
       case Some(undefined) => None
       case None => None
     }
@@ -145,7 +148,7 @@ abstract class ModelNode(javaModelNode: JavaModelNode)
    * @param operation the operation.
    * @return this model node with the operation set
    */
-  def exec(operation: Operation): ModelNode
+  def op(operation: Operation): ModelNode
 
   /**
    * Returns the model node associated with a path, or throws a `NoSuchElementException` if the path is
@@ -376,7 +379,7 @@ class ComplexModelNode(javaModelNode: JavaModelNode = new JavaModelNode()) exten
     this
   }
 
-  override def exec(operation: Operation): ModelNode = {
+  override def op(operation: Operation): ModelNode = {
     underlying.get("operation").set(operation.name.name)
     operation.params.foreach(param => this(param._1.name) = param._2)
     this
@@ -395,5 +398,5 @@ class ValueModelNode(javaModelNode: JavaModelNode) extends ModelNode(javaModelNo
   def at(address: Address): ModelNode = this
 
   /** Safe nop - returns this value model undmodified */
-  def exec(operation: Operation): ModelNode = this
+  def op(operation: Operation): ModelNode = this
 }

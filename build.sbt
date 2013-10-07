@@ -1,4 +1,6 @@
-name := "dmr.scala"
+name := "dmr-scala"
+
+organization := "org.jboss.dmr"
 
 version := "0.1-SNAPSHOT"
 

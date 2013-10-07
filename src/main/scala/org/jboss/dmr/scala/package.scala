@@ -43,7 +43,7 @@ package org.jboss.dmr
  * You can use a DSL like API to set the address and operation for a model node. To describe the "read-resource"
  * operation on "/subsystem=datasources/data-source=ExampleDS" use the following code:
  * {{{
- * ModelNode() at ("subsystem" -> "datasources") / ("data-source" -> "ExampleDS") exec 'read_resource(
+ * ModelNode() at ("subsystem" -> "datasources") / ("data-source" -> "ExampleDS") op 'read_resource(
  *   'include_runtime -> false,
  *   'recursive_depth -> 2
  * )
@@ -57,19 +57,19 @@ package org.jboss.dmr
  * therefore an illegal symbol. As most DMR operations and many parameters do contain "-", this library will replace
  * all underscores in a symbol with dashes:
  * {{{
- * ModelNode() exec 'read_resource('include_runtime -> true)
+ * ModelNode() op 'read_resource('include_runtime -> true)
  * // is exactly the same as
- * ModelNode() exec Symbol("read-resource")(Symbol("include-runtime") -> true)
+ * ModelNode() op Symbol("read-resource")(Symbol("include-runtime") -> true)
  * }}}
  *
  * Here are some more examples using addresses and operations:
  * {{{
  * // root is a constant for an empty address
- * ModelNode() at root exec 'read_resource
- * ModelNode() at ("subsystem" -> "datasources") / ("data-source" -> "ExampleDS") exec 'disable
+ * ModelNode() at root op 'read_resource
+ * ModelNode() at ("subsystem" -> "datasources") / ("data-source" -> "ExampleDS") op 'disable
  *
  * // parameters are specified as pairs (Symbol -> Any)
- * ModelNode() at ("core-service" -> "platform-mbean") / ("type" -> "runtime") exec 'read_resource(
+ * ModelNode() at ("core-service" -> "platform-mbean") / ("type" -> "runtime") op 'read_resource(
  *   'attributes_only -> true,
  *   'include_runtime -> false,
  *   'recursive_depth -> 3,
@@ -77,7 +77,7 @@ package org.jboss.dmr
  * )
  *
  * // unsupported parameter types will throw an IllegalArgumentException
- * ModelNode() at root exec 'read_resource('proxies -> Console.out)
+ * ModelNode() at root op 'read_resource('proxies -> Console.out)
  * }}}
  *
  * ==Reading Nodes==
@@ -200,13 +200,13 @@ package org.jboss.dmr
  * A composite operation is setup using the `ModelNode.composite(n: ModelNode, xn: ModelNode*)` factory method:
  * {{{
  * ModelNode.composite(
- *   ModelNode.empty at ("core-service" -> "management") / ("access" -> "authorization") exec 'read_resource(
+ *   ModelNode.empty at ("core-service" -> "management") / ("access" -> "authorization") op 'read_resource(
  *     'recursive_depth -> 2),
- *   ModelNode.empty at ("core-service" -> "management") / ("access" -> "authorization") exec 'read_children_names(
+ *   ModelNode.empty at ("core-service" -> "management") / ("access" -> "authorization") op 'read_children_names(
  *     'name -> "role-mapping"),
- *   ModelNode.empty at ("subsystem" -> "mail") / ("mail-session" -> "*") exec 'read_resource_description,
- *   ModelNode.empty at ("subsystem" -> "datasources") / ("data-source" -> "ExampleDS") exec 'disable ,
- *   ModelNode.empty at ("core-service" -> "platform-mbean") / ("type" -> "runtime") exec 'read_attribute(
+ *   ModelNode.empty at ("subsystem" -> "mail") / ("mail-session" -> "*") op 'read_resource_description,
+ *   ModelNode.empty at ("subsystem" -> "datasources") / ("data-source" -> "ExampleDS") op 'disable ,
+ *   ModelNode.empty at ("core-service" -> "platform-mbean") / ("type" -> "runtime") op 'read_attribute(
  *     'name -> "start-time")
  * )
  *

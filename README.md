@@ -57,7 +57,7 @@ You can use a DSL like API to set the address and operation for a model node. To
 on "/subsystem=datasources/data-source=ExampleDS" use the following code:
 
 ```scala
-ModelNode() at ("subsystem" -> "datasources") / ("data-source" -> "ExampleDS") exec 'read_resource(
+ModelNode() at ("subsystem" -> "datasources") / ("data-source" -> "ExampleDS") op 'read_resource(
   'include_runtime -> false,
   'recursive_depth -> 2
 )
@@ -71,20 +71,20 @@ However there's one drawback in using symbols: when using the short form `'someS
 underscores will be replaced with dashes:
 
 ```scala
-ModelNode() exec 'read_resource('include_runtime -> true)
+ModelNode() op 'read_resource('include_runtime -> true)
 // is exactly the same as
-ModelNode() exec Symbol("read-resource")(Symbol("include-runtime") -> true)
+ModelNode() op Symbol("read-resource")(Symbol("include-runtime") -> true)
 ```
 
 Here are some more examples using addresses and operations:
 
 ```scala
 // root is a constant for an empty address
-ModelNode() at root exec 'read_resource
-ModelNode() at ("subsystem" -> "datasources") / ("data-source" -> "ExampleDS") exec 'disable
+ModelNode() at root op 'read_resource
+ModelNode() at ("subsystem" -> "datasources") / ("data-source" -> "ExampleDS") op 'disable
 
 // parameters are specified as pairs (Symbol -> Any)
-ModelNode() at ("core-service" -> "platform-mbean") / ("type" -> "runtime") exec 'read_resource(
+ModelNode() at ("core-service" -> "platform-mbean") / ("type" -> "runtime") op 'read_resource(
   'attributes_only -> true,
   'include_runtime -> false,
   'recursive_depth -> 3,
@@ -92,12 +92,12 @@ ModelNode() at ("core-service" -> "platform-mbean") / ("type" -> "runtime") exec
 )
 
 // unsupported parameter types will throw an IllegalArgumentException
-ModelNode() at root exec 'read_resource('proxies -> Console.out)
+ModelNode() at root op 'read_resource('proxies -> Console.out)
 ```
 
 ## Reading Nodes
 
-Reading values from a model node follows the sementics of a `Map[String, ModelNode]`, but instead of a string you have to 
+Reading values from a model node follows the sementics of a `Map[String, ModelNode]`, but instead of a string you have to
 provide a `Path` as key. Thanks to an implicit conversion expressions like `"a" / "b" / "c"` are automatically converted
 to a path.
 
@@ -263,24 +263,34 @@ A composite operation is setup using the `ModelNode.composite(n: ModelNode, xn: 
 
 ```scala
 ModelNode.composite(
-  ModelNode.empty at ("core-service" -> "management") / ("access" -> "authorization") exec 'read_resource(
+  ModelNode.empty at ("core-service" -> "management") / ("access" -> "authorization") op 'read_resource(
     'recursive_depth -> 2),
-  ModelNode.empty at ("core-service" -> "management") / ("access" -> "authorization") exec 'read_children_names(
+  ModelNode.empty at ("core-service" -> "management") / ("access" -> "authorization") op 'read_children_names(
     'name -> "role-mapping"),
-  ModelNode.empty at ("subsystem" -> "mail") / ("mail-session" -> "*") exec 'read_resource_description,
-  ModelNode.empty at ("subsystem" -> "datasources") / ("data-source" -> "ExampleDS") exec 'disable ,
-  ModelNode.empty at ("core-service" -> "platform-mbean") / ("type" -> "runtime") exec 'read_attribute(
+  ModelNode.empty at ("subsystem" -> "mail") / ("mail-session" -> "*") op 'read_resource_description,
+  ModelNode.empty at ("subsystem" -> "datasources") / ("data-source" -> "ExampleDS") op 'disable ,
+  ModelNode.empty at ("core-service" -> "platform-mbean") / ("type" -> "runtime") op 'read_attribute(
     'name -> "start-time")
 )
 ```
 
 ## Execute an operation
 
-Once you have setup a model node you can execute it using [DMR.repl](https://github.com/heiko-braun/dmr-repl) like
-this:
+To execute DMR operations against a running WildFly instance use [DMR.repl](https://github.com/heiko-braun/dmr-repl):
 
 ```scala
 val client = connect()
-val rootResource = node at root exec 'read_resource
-val result = client.execute(rootResource.underlying)
+val response = client.execute(
+  ModelNode()
+  at ("subsystem" -> "datasources") / ("data-source" -> "ExampleDS")
+  op 'read_resource
+)
+response match {
+  case Some(node) => node match {
+    case ModelNode(Response.Success, result) => println(s"Successful DMR operation: $result")
+    case ModelNode(Response.Failed, failure) => println(s"DMR operation failed: $failure")
+    case _ => println("Undefined result")
+  }
+  case None => println("Error reading response")
+}
 ```
