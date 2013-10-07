@@ -128,7 +128,7 @@ abstract class ModelNode(javaModelNode: JavaModelNode)
   def get(path: Path): Option[ModelNode] = {
     if (underlying.has(path.elements.head)) {
       val jchild = underlying.get(path.elements.head)
-      val child = if (isSimple(jchild)) new ValueModelNode(jchild) else new ComplexModelNode(jchild)
+      val child = fromJavaNode(jchild)
       path.elements.tail match {
         case Nil => Some(child)
         case _ => child.get(Path(path.elements.tail))
@@ -155,9 +155,71 @@ abstract class ModelNode(javaModelNode: JavaModelNode)
     case None => false
   }
 
-  protected def isSimple(jnode: JavaModelNode) = jnode.getType match {
+  private def fromJavaNode(jnode: JavaModelNode): ModelNode =
+    if (isSimple(jnode)) new ValueModelNode(jnode) else new ComplexModelNode(jnode)
+
+  private def isSimple(jnode: JavaModelNode) = jnode.getType match {
     case BIG_DECIMAL | BIG_INTEGER | BOOLEAN | BYTES | DOUBLE | INT | LONG | STRING => true
     case _ => false
+  }
+
+  /**
+   * Returns a model node containing only the leaf values of this model node.
+   *
+   * If you have the following node
+   * {{{
+   * val node = ModelNode(
+   *   "flag" -> true,
+   *   "hello" -> "world",
+   *   "answer" -> 42,
+   *   "child" -> ModelNode(
+   *     "inner-a" -> 123,
+   *     "inner-b" -> "test",
+   *     "deep-inside" -> ModelNode("foo" -> "bar"),
+   *     "deep-list" -> List(
+   *       ModelNode("one" -> 1),
+   *       ModelNode("two" -> 2),
+   *       ModelNode("three" -> 3)
+   *     )
+   *   )
+   * )
+   * }}}
+   *
+   * `node.shallow()` will return this node:
+   * {{{
+   * org.jboss.dmr.scala.ModelNode =
+   * {
+   *   "flag" => true,
+   *   "hello" => "world",
+   *   "answer" => 42,
+   *   "inner-a" => 123,
+   *   "inner-b" => "test",
+   *   "foo" => "bar",
+   *   "one" => 1,
+   *   "two" => 2,
+   *   "three" => 3
+   * }
+   * }}}
+   * @return
+   */
+  def shallow(): ModelNode = {
+    flatMap(kv => kv._2 match {
+      case complex: ComplexModelNode => complex.underlying.getType match {
+        case OBJECT => complex.shallow()
+        case LIST => {
+          // turn the list of JavaModelNodes to ModelNodes
+          // extract the complex leaf nodes (which have a single key/value then)
+          // and return all single key/value tuples (the heads) as list
+          complex.underlying.asList()
+            .map(fromJavaNode)
+            .map(_.shallow())
+            .filter(_ != ModelNode.Undefined)
+            .map(_.head)
+        }
+        case _ => List.empty
+      }
+      case simple => List(kv)
+    })
   }
 
   /**
@@ -220,7 +282,7 @@ abstract class ModelNode(javaModelNode: JavaModelNode)
       case node: ModelNode => underlying.get(name).set(node.underlying)
       case values: Traversable[_] => {
         try {
-          // only colections of model nodes are supported!
+          // only collections of model nodes are supported!
           val nodes = values.asInstanceOf[Traversable[ModelNode]]
           val javaNodes = nodes.toList.map(_.underlying)
           javaModelNode.get(name).set(javaNodes)

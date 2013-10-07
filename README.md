@@ -41,6 +41,11 @@ val node = ModelNode(
       ModelNode("one" -> 1),
       ModelNode("two" -> 2),
       ModelNode("three" -> 3)
+    ),
+    "value-list" -> List(
+      ModelNode(1),
+      ModelNode(2),
+      ModelNode(3)
     )
   )
 )
@@ -194,7 +199,7 @@ Reading and writing can also be combined in one call:
 node("child" / "deep-inside") += ("foo" -> "xyz")
 ```
 
-## ModelNode as Collection
+## Collection Operations
 
 Since `ModelNode` mixes in `Traversable[(String, ModelNode)]` you can use all those nifty collection methods like
 `foreach`, `map` or `filter`, ...
@@ -215,6 +220,41 @@ val n42 = node.filter(_._2 == ModelNode(42))
 
 // combine nodes
 val node2 = node ++ ModelNode("abc" -> 1)
+```
+
+If you want to read only the leaf model nodes from a deeply nested model node, use `shallow()`:
+```
+val node = ModelNode(
+  "flag" -> true,
+  "hello" -> "world",
+  "answer" -> 42,
+  "child" -> ModelNode(
+    "inner-a" -> 123,
+    "inner-b" -> "test",
+    "deep-inside" -> ModelNode("foo" -> "bar"),
+    "deep-list" -> List(
+      ModelNode("one" -> 1),
+      ModelNode("two" -> 2),
+      ModelNode("three" -> 3)
+    )
+  )
+)
+```
+
+`node.shallow()` will return this node:
+```
+org.jboss.dmr.scala.ModelNode =
+{
+  "flag" => true,
+  "hello" => "world",
+  "answer" => 42,
+  "inner-a" => 123,
+  "inner-b" => "test",
+  "foo" => "bar",
+  "one" => 1,
+  "two" => 2,
+  "three" => 3
+}
 ```
 
 ## Composites

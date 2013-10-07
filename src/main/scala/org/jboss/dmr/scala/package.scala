@@ -175,7 +175,7 @@ package org.jboss.dmr
  * node("child" / "deep-inside") += ("foo" -> "xyz")
  * }}}
  *
- * ==ModelNode as Collection==
+ * ==Colection Operations==
  * Since [[org.jboss.dmr.scala.ModelNode]] mixes in [[scala.collection.Traversable[(String, ModelNode)]]] you can use
  * all those nifty collection methods like `foreach`, `map` or `filter`
  * {{{
