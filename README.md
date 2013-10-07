@@ -62,9 +62,8 @@ Addresses can be written down as `(String, String)` tuples separated by "/". Ope
 `Symbol`s and an optional list of parameters. Each parameter is made up of another `Symbol` and a value. Using symbols
 makes the DSL both more readable and extentable.
 
-However there's one drawback in using symbols: they cannot contain characters like "-". `'read-resource` is therefore
-an illegal symbol. As most DMR operations and many parameters do contain "-", this library will replace all
-underscores in a symbol with dashes:
+However there's one drawback in using symbols: when using the short form `'someSymbol` characters like "-" are not allowed. `'read-resource` is therefore an illegal symbol. As most DMR operations and many parameters do contain "-", all
+underscores will be replaced with dashes:
 
 ```scala
 ModelNode() exec 'read_resource('include_runtime -> true)

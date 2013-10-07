@@ -89,8 +89,6 @@ object ModelNode {
  * This class uses some of the semantics and methods of [[scala.collection.Map]] while mixing
  * in [[scala.collection.TraversableLike]] which turns it into a collection of [[(String, ModelNode)]] tuples.
  *
- * TODO flatMap does not work
- *
  * @param javaModelNode the underlying Java `org.jboss.dmr.ModelNode`
  */
 abstract class ModelNode(javaModelNode: JavaModelNode)
