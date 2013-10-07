@@ -204,7 +204,7 @@ node("child" / "deep-inside") += ("foo" -> "xyz")
 Since `ModelNode` mixes in `Traversable[(String, ModelNode)]` you can use all those nifty collection methods like
 `foreach`, `map` or `filter`, ...
 
-```
+```scala
 val node = ModelNode(
   "flag" -> true,
   "hello" -> "world",
@@ -223,7 +223,7 @@ val node2 = node ++ ModelNode("abc" -> 1)
 ```
 
 If you want to read only the leaf model nodes from a deeply nested model node, use `shallow()`:
-```
+```scala
 val node = ModelNode(
   "flag" -> true,
   "hello" -> "world",
@@ -242,7 +242,7 @@ val node = ModelNode(
 ```
 
 `node.shallow()` will return this node:
-```
+```scala
 org.jboss.dmr.scala.ModelNode =
 {
   "flag" => true,
