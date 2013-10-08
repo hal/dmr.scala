@@ -97,6 +97,9 @@ object ModelNode {
    * }
    * }}}
    *
+   * The pattern matching variables `result` and `failure` are both model nodes containing the response payload or the
+   * wrapped error description.
+   *
    * @param node the node to match
    * @return the matched patterns
    */

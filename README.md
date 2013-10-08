@@ -282,25 +282,22 @@ To execute DMR operations against a running WildFly instance use [DMR.repl](http
 val client = connect()
 val node = ModelNode() at ("subsystem" -> "datasources") / ("data-source" -> "ExampleDS") op 'read_resource
 
+def processResponse(response: ModelNode): Unit = response match {
+  case ModelNode(Response.Success, result) => println(s"Successful DMR operation: $result")
+  case ModelNode(Response.Failed, failure) => println(s"DMR operation failed: $failure")
+  case _ => println(s"Response not parsable: $response")
+}
+
 // execute sync
 (client ! node) match {
-  case Some(response) => response match {
-    case ModelNode(Response.Success, result) => println(s"Successful DMR operation: $result")
-    case ModelNode(Response.Failed, failure) => println(s"DMR operation failed: $failure")
-    case _ => println("Undefined result")
-  }
+  case Some(response) => processResponse(response)
   case None => println("Error reading response")
 }
 
 // execute async
 import scala.util.{Success, Failure}
-
 (client ? node).onComplete {
-  case Success(response) => response match {
-    case ModelNode(Response.Success, result) => println(s"Successful DMR operation: $result")
-    case ModelNode(Response.Failed, failure) => println(s"DMR operation failed: $failure")
-    case _ => println("Undefined result")
-  }
+  case Success(response) => processResponse(response)
   case Failure(ex) => println(s"DMR operation failed: $ex")
 }
 ```
