@@ -2,13 +2,9 @@ name := "dmr-scala"
 
 organization := "org.jboss.dmr"
 
-version := "0.1-SNAPSHOT"
+version := "0.2-SNAPSHOT"
 
 scalaVersion := "2.10.2"
-
-scalacOptions ++= Seq("-unchecked", "-deprecation", "-feature", "-language:implicitConversions")
-
-scalacOptions in (Compile, doc) += s"-doc-external-doc:${scalaInstance.value.libraryJar}#http://www.scala-lang.org/api/${scalaVersion.value}/"
 
 resolvers ++= Seq(
   "jboss repo" at "https://repository.jboss.org/nexus/content/groups/public/"
@@ -16,6 +12,7 @@ resolvers ++= Seq(
 
 libraryDependencies ++= Seq(
   "org.scala-lang" % "scala-reflect" % "2.10.2",
+  "org.scalatest" % "scalatest_2.10" % "2.0.RC1" % "test",
   "org.jboss" % "jboss-dmr" % "1.2.0.Final"
 )
 

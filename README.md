@@ -202,7 +202,7 @@ node("child" / "deep-inside") += ("foo" -> "xyz")
 ## Collection Operations
 
 Since `ModelNode` mixes in `Traversable[(String, ModelNode)]` you can use all those nifty collection methods like
-`foreach`, `map` or `filter`, ...
+`foreach`, `map` or `filter`:
 
 ```scala
 val node = ModelNode(
@@ -222,11 +222,13 @@ val n42 = node.filter(_._2 == ModelNode(42))
 val node2 = node ++ ModelNode("abc" -> 1)
 ```
 
-If you want to read only the leaf model nodes from a deeply nested model node, use `shallow()`:
+Please note that these kind of methods only traverse over the direct children of a model node. If you want to traverse
+over all children in a deeply nested model node use the `inOrder` method which gives you a list
+of `(String, ModelNode)` tuples:
+
 ```scala
 val node = ModelNode(
   "flag" -> true,
-  "hello" -> "world",
   "answer" -> 42,
   "child" -> ModelNode(
     "inner-a" -> 123,
@@ -234,27 +236,48 @@ val node = ModelNode(
     "deep-inside" -> ModelNode("foo" -> "bar"),
     "deep-list" -> List(
       ModelNode("one" -> 1),
-      ModelNode("two" -> 2),
-      ModelNode("three" -> 3)
+      ModelNode("two" -> 2)
+    ),
+    "value-list" -> List(
+      ModelNode(1),
+      ModelNode(2)
     )
   )
 )
+
+node.inOrder map { tpl => tpl._1 }
+// will result in List(flag, answer, child, inner-a, inner-b, deep-inside, foo, deep-list, one, two, value-list)
 ```
 
-`node.shallow()` will return this node:
+## Pattern Matching / Extractor
+
+Model nodes support pattern matching / extractor against their type:
+
 ```scala
-org.jboss.dmr.scala.ModelNode =
-{
-  "flag" => true,
-  "hello" => "world",
-  "answer" => 42,
-  "inner-a" => 123,
-  "inner-b" => "test",
-  "foo" => "bar",
-  "one" => 1,
-  "two" => 2,
-  "three" => 3
+val node = ModelNode(
+  "flag" -> true,
+  "hello" -> "world",
+  "answer" -> 42,
+  "one" -> 1,
+  "two" -> 2
+)
+
+import org.jboss.dmr.ModelType._
+for ((key, node) <- node) node match {
+  case ModelNode(INT) => println(s"$key is an integer: $node")
+  case ModelNode(t) => println(s"$key is not an integer, but $t")
 }
+
+val (key, firstNode) = node.head
+val ModelNode(booleanType) = firstNode
+// booleanType == org.jboss.dmr.ModelType.BOOLEAN
+
+val integerNodes = for {
+  (key, node) <- node
+  ModelNode(t) = node
+  if t == INT
+} yield node
+// results in List(42, 1, 2)
 ```
 
 ## Composites
@@ -276,15 +299,18 @@ ModelNode.composite(
 
 ## Execute an operation
 
-To execute DMR operations against a running WildFly instance use [DMR.repl](https://github.com/heiko-braun/dmr-repl):
+To execute DMR operations against a running WildFly instance use [DMR.repl](https://github.com/heiko-braun/dmr-repl).
+The `Response` object has an extractor and constants to parse the DMR response using pattern matching. The pattern
+matching variables `result` and `failure` are both model nodes containing the response payload or the wrapped error
+description:
 
 ```scala
 val client = connect()
 val node = ModelNode() at ("subsystem" -> "datasources") / ("data-source" -> "ExampleDS") op 'read_resource
 
 def processResponse(response: ModelNode): Unit = response match {
-  case ModelNode(Response.Success, result) => println(s"Successful DMR operation: $result")
-  case ModelNode(Response.Failed, failure) => println(s"DMR operation failed: $failure")
+  case Response(Response.Success, result) => println(s"Successful DMR operation: $result")
+  case Response(Response.Failure, failure) => println(s"DMR operation failed: $failure")
   case _ => println(s"Response not parsable: $response")
 }
 

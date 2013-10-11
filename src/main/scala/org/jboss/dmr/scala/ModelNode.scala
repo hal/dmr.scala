@@ -6,14 +6,45 @@ import scala.collection.JavaConversions._
 import scala.collection.generic.CanBuildFrom
 import scala.collection.mutable.{Builder, ListBuffer}
 
-import org.jboss.dmr.{ModelNode => JavaModelNode}
+import org.jboss.dmr.{ModelNode => JavaModelNode, ModelType}
 import org.jboss.dmr.ModelType._
 import org.jboss.dmr.scala.ModelNode.NodeTuple
 
 /** Response constants */
 object Response {
-  val Failed = "failed"
   val Success = "success"
+  val Failure = "failed"
+
+  /**
+   * Extractor for matching the response of a DMR operation.
+   *
+   * {{{
+   * val node = ... // a model node returned by some DMR operation
+   * node match {
+   *   case ModelNode(Response.Success, result) => println(s"Successful DMR operation: $result")
+   *   case ModelNode(Response.Failure, failure) => println(s"DMR operation failed: $failure")
+   *   case _ => println("Undefined result")
+   * }
+   * }}}
+   *
+   * The pattern matching variables `result` and `failure` are both model nodes containing the response payload or the
+   * wrapped error description.
+   *
+   * @param node the node to match
+   * @return the matched patterns
+   */
+  def unapply(node: ModelNode): Option[(String, ModelNode)] = {
+    val outcome = for {
+      outcomeNode <- node.get("outcome")
+      outcomeValue <- outcomeNode.asString
+    } yield outcomeValue
+    outcome match {
+      case Some(Response.Success) => Some(Response.Success -> node.getOrElse("result", ModelNode.Undefined))
+      case Some(Response.Failure) => Some(Response.Failure -> node.getOrElse("failure-description", ModelNode("No failure-description provided")))
+      case Some(undefined) => None
+      case None => None
+    }
+  }
 }
 
 /** Factory for [[org.jboss.dmr.scala.ModelNode]] */
@@ -85,36 +116,8 @@ object ModelNode {
 
   def newBuilder: Builder[NodeTuple, ModelNode] = new ListBuffer().mapResult(kvs => new ComplexModelNode() += (kvs: _*))
 
-  /**
-   * Extractor for matching the result of a DMR operation.
-   *
-   * {{{
-   * val node = ... // a model node returned by some DMR operation
-   * node match {
-   *   case ModelNode(Success, result) => println(s"Successful DMR operation: $result")
-   *   case ModelNode(Failed, failure) => println(s"DMR operation failed: $failure")
-   *   case _ => println("Undefined result")
-   * }
-   * }}}
-   *
-   * The pattern matching variables `result` and `failure` are both model nodes containing the response payload or the
-   * wrapped error description.
-   *
-   * @param node the node to match
-   * @return the matched patterns
-   */
-  def unapply(node: ModelNode): Option[(String, ModelNode)] = {
-    val outcome = for {
-      outcomeNode <- node.get("outcome")
-      outcomeValue <- outcomeNode.asString
-    } yield outcomeValue
-    outcome match {
-      case Some(Response.Success) => Some(Response.Success -> node.getOrElse("result", Undefined))
-      case Some(Response.Failed) => Some(Response.Failed -> node.getOrElse("failure-description", ModelNode("No failure-description provided")))
-      case Some(undefined) => None
-      case None => None
-    }
-  }
+  /** Extractor based on the model nodes type */
+  def unapply(node: ModelNode): Option[ModelType] = Some(node.underlying.getType)
 }
 
 /**
@@ -134,6 +137,8 @@ abstract class ModelNode(javaModelNode: JavaModelNode)
   /** Returns the underlying Java mode node */
   def underlying = javaModelNode
 
+  //---------------------------------------- DSL methods
+
   /**
    * Sets the address for this model node. An address can be specified using `(String, String)` tuples seperated
    * by "/". Thus an expression of  `("subsystem" -> "datasources") / ("data-source" -> "ExampleDS")` will be
@@ -152,6 +157,8 @@ abstract class ModelNode(javaModelNode: JavaModelNode)
    * @return this model node with the operation set
    */
   def op(operation: Operation): ModelNode
+
+  //---------------------------------------- read only methods
 
   /**
    * Returns the model node associated with a path, or throws a `NoSuchElementException` if the path is
@@ -190,6 +197,46 @@ abstract class ModelNode(javaModelNode: JavaModelNode)
     case None => false
   }
 
+  /** Returns the keys for this model node */
+  def keys: Iterable[String] = contents.map(_._1)
+
+  /** Returns the values for this model node */
+  def values: Iterable[ModelNode] = contents.map(_._2)
+
+  //---------------------------------------- traversable methods
+
+  override def foreach[U](f: (NodeTuple) => U): Unit = contents.foreach(f)
+
+  override protected[this] def newBuilder: Builder[NodeTuple, ModelNode] = ModelNode.newBuilder
+
+  private def contents: List[NodeTuple] = underlying.getType match {
+    case OBJECT => underlying.asList().map(propAsTuple).toList
+    case _ => List.empty
+  }
+
+  /** Traversals the model node tree using inorder */
+  def inOrder: List[NodeTuple] = inOrder(underlying)
+
+  private def inOrder(jnode: JavaModelNode): List[NodeTuple] = {
+    jnode.getType match {
+      case OBJECT => jnode.asList().flatMap(inOrder(_)).toList
+      case LIST => List(propAsTuple(jnode))
+      case PROPERTY => {
+        val propValue: JavaModelNode = jnode.asProperty().getValue
+        propValue.getType match {
+          case OBJECT | LIST => List(propAsTuple(jnode)) ++ propValue.asList().flatMap(inOrder(_)).toList
+          case _ => List(propAsTuple(jnode))
+        }
+      }
+      case _ => List()
+    }
+  }
+
+  def propAsTuple(jnode: JavaModelNode): NodeTuple = {
+    val prop = jnode.asProperty()
+    (prop.getName, fromJavaNode(prop.getValue))
+  }
+
   private def fromJavaNode(jnode: JavaModelNode): ModelNode =
     if (isSimple(jnode)) new ValueModelNode(jnode) else new ComplexModelNode(jnode)
 
@@ -198,64 +245,7 @@ abstract class ModelNode(javaModelNode: JavaModelNode)
     case _ => false
   }
 
-  /**
-   * Returns a model node containing only the leaf values of this model node.
-   *
-   * If you have the following node
-   * {{{
-   * val node = ModelNode(
-   *   "flag" -> true,
-   *   "hello" -> "world",
-   *   "answer" -> 42,
-   *   "child" -> ModelNode(
-   *     "inner-a" -> 123,
-   *     "inner-b" -> "test",
-   *     "deep-inside" -> ModelNode("foo" -> "bar"),
-   *     "deep-list" -> List(
-   *       ModelNode("one" -> 1),
-   *       ModelNode("two" -> 2),
-   *       ModelNode("three" -> 3)
-   *     )
-   *   )
-   * )
-   * }}}
-   *
-   * `node.shallow()` will return this node:
-   * {{{
-   * org.jboss.dmr.scala.ModelNode =
-   * {
-   *   "flag" => true,
-   *   "hello" => "world",
-   *   "answer" => 42,
-   *   "inner-a" => 123,
-   *   "inner-b" => "test",
-   *   "foo" => "bar",
-   *   "one" => 1,
-   *   "two" => 2,
-   *   "three" => 3
-   * }
-   * }}}
-   * @return
-   */
-  def shallow(): ModelNode = {
-    flatMap(kv => kv._2 match {
-      case complex: ComplexModelNode => complex.underlying.getType match {
-        case OBJECT => complex.shallow()
-        case LIST => {
-          // turn the list of JavaModelNodes to ModelNodes
-          // extract the complex leaf nodes (which have a single key/value then)
-          // and return all single key/value tuples (the heads) as list
-          complex.underlying.asList()
-            .map(fromJavaNode)
-            .map(_.shallow())
-            .filter(_ != ModelNode.Undefined)
-            .map(_.head)
-        }
-        case _ => List.empty
-      }
-      case simple => List(kv)
-    })
-  }
+  //---------------------------------------- update methods
 
   /**
    * Adds multiple key / value pairs to this model node:
@@ -330,6 +320,8 @@ abstract class ModelNode(javaModelNode: JavaModelNode)
     }
   }
 
+  //---------------------------------------- object methods
+
   /** Delegates to `uderlying.hashCode()` */
   override def hashCode(): Int = underlying.hashCode()
 
@@ -341,27 +333,6 @@ abstract class ModelNode(javaModelNode: JavaModelNode)
 
   /** Delegates to `underlying.toString` */
   override def toString() = underlying.toString
-
-  /** Returns the keys for this model node */
-  def keys: Iterable[String] = contents.map(_._1)
-
-  /** Returns the values for this model node */
-  def values: Iterable[ModelNode] = contents.map(_._2)
-
-  override def foreach[U](f: (NodeTuple) => U): Unit = contents.foreach(f)
-
-  override protected[this] def newBuilder: Builder[NodeTuple, ModelNode] = ModelNode.newBuilder
-
-  private def contents: List[NodeTuple] = underlying.getType match {
-    case OBJECT =>
-      underlying.asList().map(jnode => {
-        val jvalue = jnode.asProperty().getValue
-        val key = jnode.asProperty().getName
-        val value = if (isSimple(jvalue)) new ValueModelNode(jvalue) else new ComplexModelNode(jvalue)
-        (key, value)
-      }).toList
-    case _ => List.empty
-  }
 }
 
 /**
