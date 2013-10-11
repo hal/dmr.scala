@@ -306,11 +306,11 @@ description:
 
 ```scala
 val client = connect()
-val node = ModelNode() at ("subsystem" -> "datasources") / ("data-source" -> "ExampleDS") op 'read_resource
+val node = ModelNode() at ("subsystem" -> "datasources") op 'read_resource
 
 def processResponse(response: ModelNode): Unit = response match {
-  case Response(Response.Success, result) => println(s"Successful DMR operation: $result")
-  case Response(Response.Failure, failure) => println(s"DMR operation failed: $failure")
+  case Response(Response.Success, result) => println(s"Success: $result")
+  case Response(Response.Failure, failure) => println(s"Failed: $failure")
   case _ => println(s"Response not parsable: $response")
 }
 
