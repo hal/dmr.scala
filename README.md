@@ -286,13 +286,13 @@ A composite operation is setup using the `ModelNode.composite(n: ModelNode, xn: 
 
 ```scala
 ModelNode.composite(
-  ModelNode.empty at ("core-service" -> "management") / ("access" -> "authorization") op 'read_resource(
+  ModelNode() at ("core-service" -> "management") / ("access" -> "authorization") op 'read_resource(
     'recursive_depth -> 2),
-  ModelNode.empty at ("core-service" -> "management") / ("access" -> "authorization") op 'read_children_names(
+  ModelNode() at ("core-service" -> "management") / ("access" -> "authorization") op 'read_children_names(
     'name -> "role-mapping"),
-  ModelNode.empty at ("subsystem" -> "mail") / ("mail-session" -> "*") op 'read_resource_description,
-  ModelNode.empty at ("subsystem" -> "datasources") / ("data-source" -> "ExampleDS") op 'disable ,
-  ModelNode.empty at ("core-service" -> "platform-mbean") / ("type" -> "runtime") op 'read_attribute(
+  ModelNode() at ("subsystem" -> "mail") / ("mail-session" -> "*") op 'read_resource_description,
+  ModelNode() at ("subsystem" -> "datasources") / ("data-source" -> "ExampleDS") op 'disable ,
+  ModelNode() at ("core-service" -> "platform-mbean") / ("type" -> "runtime") op 'read_attribute(
     'name -> "start-time")
 )
 ```
