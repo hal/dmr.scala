@@ -1,5 +1,7 @@
 package org.jboss.dmr.scala
 
+import scala.collection.JavaConversions._
+
 /** Provides methods to convert a model node to a simple value */
 trait ValueConversions {
   this: ModelNode =>
@@ -21,6 +23,10 @@ trait ValueConversions {
 
   /** Returns the value of this nodel node as `Some(String)` or `None` if the underlying node does not support conversion to `String` */
   def asString: Option[String] = safeAs(underlying.asString)
+
+  def asList: Option[List[ModelNode]] = {
+    safeAs(underlying.asList).map(jnodes => jnodes.map(jnode => this.fromJavaNode(jnode)).toList)
+  }
 
   private def safeAs[T](asMethod: () => T) = try {
     Some(asMethod())

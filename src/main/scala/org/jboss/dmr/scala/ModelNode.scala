@@ -200,7 +200,7 @@ abstract class ModelNode(javaModelNode: JavaModelNode)
     (prop.getName, fromJavaNode(prop.getValue))
   }
 
-  private def fromJavaNode(jnode: JavaModelNode): ModelNode =
+  private[scala] def fromJavaNode(jnode: JavaModelNode): ModelNode =
     if (isSimple(jnode)) new ValueModelNode(jnode) else new ComplexModelNode(jnode)
 
   private def isSimple(jnode: JavaModelNode) = jnode.getType match {
