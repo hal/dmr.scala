@@ -64,9 +64,16 @@ object ModelNode {
    * @param n the first model node
    * @param xn additional model nodes
    */
-  def composite(n: ModelNode, xn: ModelNode*): ModelNode = {
+  def composite(n: ModelNode, xn: ModelNode*): ModelNode = composite(List(n) ++ xn)
+
+  /**
+   * Creates a new composite containing the specified model nodes
+   *
+   * @param nodes the model nodes
+   */
+  def composite(nodes: List[ModelNode]): ModelNode = {
     val node = new ComplexModelNode() op 'composite
-    node("steps") = List(n) ++ xn
+    node("steps") = nodes
     node
   }
 
