@@ -71,7 +71,7 @@ object ModelNode {
    *
    * @param nodes the model nodes
    */
-  def composite(nodes: List[ModelNode]): ModelNode = {
+  def composite(nodes: Seq[ModelNode]): ModelNode = {
     val node = new ComplexModelNode() op 'composite
     node("steps") = nodes
     node
