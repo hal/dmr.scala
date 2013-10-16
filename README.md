@@ -134,7 +134,7 @@ Since the result of `node.get("a" / "b" / "c")` is `Option[ModelNode]`, reading 
 some children in the path do not exist. In this case `None` wil be returned:
 
 ```scala
-val nope = node.get("level0", "oops", "level2", "level3")
+val nope = node.get("level0" / "oops" / "level2" / "level3")
 ```
 
 ## Reading Values

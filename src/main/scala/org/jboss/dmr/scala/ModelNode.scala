@@ -10,43 +10,6 @@ import org.jboss.dmr.{ModelNode => JavaModelNode, ModelType}
 import org.jboss.dmr.ModelType._
 import org.jboss.dmr.scala.ModelNode.NodeTuple
 
-/** Response constants */
-object Response {
-  val Success = "success"
-  val Failure = "failed"
-
-  /**
-   * Extractor for matching the response of a DMR operation.
-   *
-   * {{{
-   * val node = ... // a model node returned by some DMR operation
-   * node match {
-   *   case ModelNode(Response.Success, result) => println(s"Successful DMR operation: $result")
-   *   case ModelNode(Response.Failure, failure) => println(s"DMR operation failed: $failure")
-   *   case _ => println("Undefined result")
-   * }
-   * }}}
-   *
-   * The pattern matching variables `result` and `failure` are both model nodes containing the response payload or the
-   * wrapped error description.
-   *
-   * @param node the node to match
-   * @return the matched patterns
-   */
-  def unapply(node: ModelNode): Option[(String, ModelNode)] = {
-    val outcome = for {
-      outcomeNode <- node.get("outcome")
-      outcomeValue <- outcomeNode.asString
-    } yield outcomeValue
-    outcome match {
-      case Some(Response.Success) => Some(Response.Success -> node.getOrElse("result", ModelNode.Undefined))
-      case Some(Response.Failure) => Some(Response.Failure -> node.getOrElse("failure-description", ModelNode("No failure-description provided")))
-      case Some(undefined) => None
-      case None => None
-    }
-  }
-}
-
 /** Factory for [[org.jboss.dmr.scala.ModelNode]] */
 object ModelNode {
 

@@ -1,10 +1,16 @@
 name := "dmr-scala"
 
-organization := "org.jboss.dmr"
+organization := "org.jboss"
 
-version := "0.2-SNAPSHOT"
+version := "0.2.0"
 
 scalaVersion := "2.10.2"
+
+scalacOptions ++= Seq(
+  "-language:implicitConversions",
+  "-feature",
+  "-deprecation"
+)
 
 resolvers ++= Seq(
   "jboss repo" at "https://repository.jboss.org/nexus/content/groups/public/"
@@ -19,4 +25,4 @@ libraryDependencies ++= Seq(
 initialCommands += """
   import org.jboss.dmr.scala._
   import org.jboss.dmr.scala.ModelNode
-"""
+                   """
