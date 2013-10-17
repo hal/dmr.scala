@@ -171,7 +171,10 @@ abstract class ModelNode(javaModelNode: JavaModelNode)
   def keys: Iterable[String] = contents.map(_._1)
 
   /** Returns the values for this model node */
-  def values: Iterable[ModelNode] = contents.map(_._2)
+  def values: Iterable[ModelNode] = underlying.getType match {
+    case LIST => asList getOrElse List()
+    case _ => contents.map(_._2)
+  }
 
   //---------------------------------------- traversable methods
 
@@ -208,10 +211,10 @@ abstract class ModelNode(javaModelNode: JavaModelNode)
   }
 
   private[scala] def fromJavaNode(jnode: JavaModelNode): ModelNode =
-    if (isSimple(jnode)) new ValueModelNode(jnode) else new ComplexModelNode(jnode)
+    if (isObject(jnode)) new ComplexModelNode(jnode) else new ValueModelNode(jnode)
 
-  private def isSimple(jnode: JavaModelNode) = jnode.getType match {
-    case BIG_DECIMAL | BIG_INTEGER | BOOLEAN | BYTES | DOUBLE | INT | LONG | STRING => true
+  private def isObject(jnode: JavaModelNode) = jnode.getType match {
+    case OBJECT => true
     case _ => false
   }
 
@@ -313,13 +316,8 @@ abstract class ModelNode(javaModelNode: JavaModelNode)
 class ComplexModelNode(javaModelNode: JavaModelNode = new JavaModelNode()) extends ModelNode(javaModelNode) {
 
   override def at(address: Address): ModelNode = {
-    emptyAddress()
-    address.tuples.foreach(tuple => underlying.get("address").add(tuple._1, tuple._2))
-    this
-  }
-
-  private def emptyAddress(): ModelNode = {
     underlying.get("address").setEmptyList()
+    address.tuples.foreach(tuple => underlying.get("address").add(tuple._1, tuple._2))
     this
   }
 
