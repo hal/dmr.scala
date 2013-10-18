@@ -299,7 +299,7 @@ ModelNode.composite(
 
 ## Execute an operation
 
-To execute DMR operations against a running WildFly instance use [DMR.repl](https://github.com/hal/dmr-repl).
+To execute DMR operations against a running WildFly instance use [DMR.repl](https://github.com/hal/dmr.repl).
 The `Response` object has an extractor and constants to parse the DMR response using pattern matching. The pattern
 matching variables `result` and `failure` are both model nodes containing the response payload or the wrapped error
 description:
