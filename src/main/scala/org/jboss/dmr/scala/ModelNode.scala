@@ -4,7 +4,7 @@ import scala.Some
 import scala.collection.TraversableLike
 import scala.collection.JavaConversions._
 import scala.collection.generic.CanBuildFrom
-import scala.collection.mutable.{Builder, ListBuffer}
+import scala.collection.mutable.ListBuffer
 
 import org.jboss.dmr.{ModelNode => JavaModelNode, ModelType}
 import org.jboss.dmr.ModelType._
@@ -71,7 +71,7 @@ object ModelNode {
    *
    * @param nodes the model nodes
    */
-  def composite(nodes: Seq[ModelNode]): ModelNode = {
+  def composite(nodes: Traversable[ModelNode]): ModelNode = {
     val node = new ComplexModelNode() op 'composite
     node("steps") = nodes
     node
@@ -79,12 +79,14 @@ object ModelNode {
 
   implicit def canBuildFrom: CanBuildFrom[ModelNode, NodeTuple, ModelNode] =
     new CanBuildFrom[ModelNode, NodeTuple, ModelNode] {
-      def apply(): Builder[NodeTuple, ModelNode] = newBuilder
+      def apply(): collection.mutable.Builder[NodeTuple, ModelNode] = newBuilder
 
-      def apply(from: ModelNode): Builder[NodeTuple, ModelNode] = newBuilder
+      def apply(from: ModelNode): collection.mutable.Builder[NodeTuple, ModelNode] = newBuilder
     }
 
-  def newBuilder: Builder[NodeTuple, ModelNode] = new ListBuffer().mapResult(kvs => new ComplexModelNode() += (kvs: _*))
+  def newBuilder: collection.mutable.Builder[NodeTuple, ModelNode] = {
+    new ListBuffer().mapResult(kvs => new ComplexModelNode() += (kvs: _*))
+  }
 
   /** Extractor based on the model nodes type */
   def unapply(node: ModelNode): Option[ModelType] = Some(node.underlying.getType)
@@ -180,7 +182,7 @@ abstract class ModelNode(javaModelNode: JavaModelNode)
 
   override def foreach[U](f: (NodeTuple) => U): Unit = contents.foreach(f)
 
-  override protected[this] def newBuilder: Builder[NodeTuple, ModelNode] = ModelNode.newBuilder
+  override protected[this] def newBuilder: collection.mutable.Builder[NodeTuple, ModelNode] = ModelNode.newBuilder
 
   private def contents: List[NodeTuple] = underlying.getType match {
     case OBJECT => underlying.asList().map(propAsTuple).toList
