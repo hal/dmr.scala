@@ -299,7 +299,7 @@ ModelNode.composite(
 
 ## Execute an operation
 
-To execute DMR operations against a running WildFly instance use [DMR.repl](https://github.com/heiko-braun/dmr-repl).
+To execute DMR operations against a running WildFly instance use [DMR.repl](https://github.com/hal/dmr-repl).
 The `Response` object has an extractor and constants to parse the DMR response using pattern matching. The pattern
 matching variables `result` and `failure` are both model nodes containing the response payload or the wrapped error
 description:
@@ -308,22 +308,16 @@ description:
 val client = connect()
 val node = ModelNode() at ("subsystem" -> "datasources") op 'read_resource
 
-def processResponse(response: ModelNode): Unit = response match {
-  case Response(Response.Success, result) => println(s"Success: $result")
-  case Response(Response.Failure, failure) => println(s"Failed: $failure")
-  case _ => println(s"Response not parsable: $response")
+import org.jboss.dmr.repl.Response
+import org.jboss.dmr.repl.Response.{Success, Failure}
+(client ! node) map {
+  case Response(Success, result) => ...
+  case Response(Failure, failure) => ...
 }
 
-// execute sync
-(client ! node) match {
-  case Some(response) => processResponse(response)
-  case None => println("Error reading response")
-}
-
-// execute async
 import scala.util.{Success, Failure}
 (client ? node).onComplete {
-  case Success(response) => processResponse(response)
-  case Failure(ex) => println(s"DMR operation failed: $ex")
+  case Success(response) => ...
+  case Failure(ex) => ...
 }
 ```
