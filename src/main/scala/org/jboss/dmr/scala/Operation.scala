@@ -36,7 +36,9 @@ class Operation(val n: Symbol) {
    * @return this operation containing the specified parameters
    */
   def apply(params: Parameter[Any]*): Operation = {
-    this.params = params.map((param) => Symbol(param._1.name.replace('_', '-')) -> param._2).toList
+    this.params = params.map {
+      case (symbol, value) => Symbol(symbol.name.replace('_', '-')) -> value
+    }.toList
     this
   }
 
