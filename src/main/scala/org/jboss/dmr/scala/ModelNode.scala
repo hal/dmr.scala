@@ -15,8 +15,6 @@ object ModelNode {
 
   type NodeTuple = (String, ModelNode)
 
-  object Undefined extends ComplexModelNode
-
   /** Creates a new model node holding the given value */
   def apply(value: AnyVal): ModelNode = {
     val jvalue = value match {
@@ -34,7 +32,7 @@ object ModelNode {
   def apply(value: String): ModelNode = new ValueModelNode(new JavaModelNode(value))
 
   /**
-   * Creates a new model node with the specified key / value pairs. Use this method to create a hirarchy of model
+   * Creates a new model node with the specified key / value pairs. Use this method to create a hierarchy of model
    * nodes:
    * {{{
    * val node = ModelNode(
@@ -54,7 +52,7 @@ object ModelNode {
    * )
    * }}}
    *
-   * @param tuples the key / value pairs
+   * @param kvs the key / value pairs
    */
   def apply(kvs: (String, Any)*): ModelNode = new ComplexModelNode() += (kvs: _*)
 
@@ -97,7 +95,7 @@ object ModelNode {
  * natural way.
  *
  * This class uses some of the semantics and methods of [[scala.collection.Map]] while mixing
- * in [[scala.collection.TraversableLike]] which turns a model node into a collection of [[(String, ModelNode)]] tuples.
+ * in [[scala.collection.TraversableLike]] which turns a model node into a collection of [[(String, ModelNode)]] tuple.
  *
  * @param javaModelNode the underlying Java `org.jboss.dmr.ModelNode`
  */
@@ -112,7 +110,7 @@ abstract class ModelNode(javaModelNode: JavaModelNode)
   //---------------------------------------- DSL methods
 
   /**
-   * Sets the address for this model node. An address can be specified using `(String, String)` tuples seperated
+   * Sets the address for this model node. An address can be specified using `(String, String)` tuple separated
    * by "/". Thus an expression of  `("subsystem" -> "datasources") / ("data-source" -> "ExampleDS")` will be
    * implicitly converted to an address.
    *
@@ -170,12 +168,16 @@ abstract class ModelNode(javaModelNode: JavaModelNode)
   }
 
   /** Returns the keys for this model node */
-  def keys: Iterable[String] = contents.map(_._1)
+  def keys: Iterable[String] = contents.map {
+    case (key, _) => key
+  }
 
   /** Returns the values for this model node */
   def values: Iterable[ModelNode] = underlying.getType match {
     case LIST => asList getOrElse List()
-    case _ => contents.map(_._2)
+    case _ => contents.map {
+      case (_, value) => value
+    }
   }
 
   //---------------------------------------- traversable methods
@@ -183,11 +185,6 @@ abstract class ModelNode(javaModelNode: JavaModelNode)
   override def foreach[U](f: (NodeTuple) => U): Unit = contents.foreach(f)
 
   override protected[this] def newBuilder: collection.mutable.Builder[NodeTuple, ModelNode] = ModelNode.newBuilder
-
-  private def contents: List[NodeTuple] = underlying.getType match {
-    case OBJECT => underlying.asList().map(propAsTuple).toList
-    case _ => List.empty
-  }
 
   /** Traversals the model node tree using inorder */
   def inOrder: List[NodeTuple] = inOrder(underlying)
@@ -207,17 +204,22 @@ abstract class ModelNode(javaModelNode: JavaModelNode)
     }
   }
 
-  def propAsTuple(jnode: JavaModelNode): NodeTuple = {
+  //---------------------------------------- helper methods
+
+  private def contents: List[NodeTuple] = underlying.getType match {
+    case OBJECT => underlying.asList().map(propAsTuple).toList
+    case _ => List.empty
+  }
+
+  private def propAsTuple(jnode: JavaModelNode): NodeTuple = {
     val prop = jnode.asProperty()
     (prop.getName, fromJavaNode(prop.getValue))
   }
 
-  private[scala] def fromJavaNode(jnode: JavaModelNode): ModelNode =
-    if (isObject(jnode)) new ComplexModelNode(jnode) else new ValueModelNode(jnode)
-
-  private def isObject(jnode: JavaModelNode) = jnode.getType match {
-    case OBJECT => true
-    case _ => false
+  private[scala] def fromJavaNode(jnode: JavaModelNode): ModelNode = jnode.getType match {
+    case OBJECT => new ComplexModelNode(jnode)
+    case PROPERTY => new ComplexModelNode(jnode.asObject()) // don't want to have properties in the scala API
+    case _ => new ValueModelNode(jnode)
   }
 
   //---------------------------------------- update methods
@@ -297,7 +299,7 @@ abstract class ModelNode(javaModelNode: JavaModelNode)
 
   //---------------------------------------- object methods
 
-  /** Delegates to `uderlying.hashCode()` */
+  /** Delegates to `underlying.hashCode()` */
   override def hashCode(): Int = underlying.hashCode()
 
   /** Delegates to `underlying.equals()` if `obj` is also a model node, returns false otherwise */
@@ -319,7 +321,7 @@ class ComplexModelNode(javaModelNode: JavaModelNode = new JavaModelNode()) exten
 
   override def at(address: Address): ModelNode = {
     underlying.get("address").setEmptyList()
-    address.tuples.foreach(tuple => underlying.get("address").add(tuple._1, tuple._2))
+    address.tuple.foreach(tuple => underlying.get("address").add(tuple._1, tuple._2))
     this
   }
 
@@ -338,9 +340,9 @@ class ComplexModelNode(javaModelNode: JavaModelNode = new JavaModelNode()) exten
  */
 class ValueModelNode(javaModelNode: JavaModelNode) extends ModelNode(javaModelNode) {
 
-  /** Safe nop - returns this value model undmodified */
+  /** Safe nop - returns this value model unmodified */
   def at(address: Address): ModelNode = this
 
-  /** Safe nop - returns this value model undmodified */
+  /** Safe nop - returns this value model unmodified */
   def op(operation: Operation): ModelNode = this
 }

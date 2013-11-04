@@ -6,13 +6,14 @@ class OperationSpec extends FlatSpec with Matchers {
 
   "An Operation" should "replace '_' with '-' for its name" in {
     val op = Operation('symbol_with_underscores)
-    assert(Symbol("symbol-with-underscores") === op.name)
+    op.name should equal (Symbol("symbol-with-underscores"))
   }
 
   it should "replace '_' with '-' for its parameters" in {
     val op = Operation('foo) {
       'param_1 -> "foo"
     }
-    assert(Symbol("param-1") === op.params.head._1)
+    val (key, _) = op.params.head
+    key should equal (Symbol("param-1"))
   }
 }

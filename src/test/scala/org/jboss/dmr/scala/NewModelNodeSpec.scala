@@ -3,38 +3,64 @@ package org.jboss.dmr.scala
 import scala.None
 import scala.language.reflectiveCalls
 import org.scalatest.{FlatSpec, Matchers}
+import org.jboss.dmr.ModelType._
 
 class NewModelNodeSpec extends FlatSpec with Matchers {
   def fixture = new {
-    val values = List(true, 12, 1234l, 1.2f, 3.4d)
+    val valueNodes = List(ModelNode("foo"), ModelNode(true), ModelNode(1234), ModelNode(1234l), ModelNode(12.34d))
+    val node = ModelNode("foo" -> "bar", "answer" -> 42)
   }
 
   "A ModelNode created from a value" should "be a ValueModelNode" in {
-    val f = fixture
-    for (value <- f.values) {
-      val node = ModelNode(value)
-      node shouldBe a [ValueModelNode]
+    for (node <- fixture.valueNodes) {
+      node shouldBe a[ValueModelNode]
+    }
+  }
+
+  it should "have the correct ModelType" in {
+    for (node <- fixture.valueNodes) {
+      node match {
+        case ModelNode(STRING) | ModelNode(BOOLEAN) | ModelNode(INT) | ModelNode(LONG) | ModelNode(DOUBLE) => () // ok
+        case ModelNode(unknownType) => fail(s"Unknown type: $unknownType")
+      }
+    }
+  }
+
+  it should "return the correct value for the as...() methods" in {
+    for (node <- fixture.valueNodes) {
+      node match {
+        case ModelNode(STRING) => node.asString should be(Some("foo"))
+        case ModelNode(BOOLEAN) => node.asBoolean should be(Some(true))
+        case ModelNode(INT) => node.asInt should be(Some(1234))
+        case ModelNode(LONG) => node.asLong should be(Some(1234l))
+        case ModelNode(DOUBLE) => node.asDouble should be(Some(12.34d))
+      }
     }
   }
 
   it should "return None for asList()" in {
-    val f = fixture
-    for (value <- f.values) {
-      val node = ModelNode(value)
-      node.asList should be (None)
+    for (node <- fixture.valueNodes) {
+      node.asList shouldBe None
     }
   }
 
-  it should "return Some() for the remaining as...() methods" in {
+  "A ModelNode created from key/value pairs" should "be a ComplexValueNode" in {
+    fixture.node shouldBe a[ComplexModelNode]
+  }
+
+  it should "have the correct ModelType" in {
+    val ModelNode(typ) = fixture.node
+    typ should equal (OBJECT)
+  }
+
+  it should "return the correct value for the as...() methods" in {
     val f = fixture
-    for (value <- f.values) {
-      val node = ModelNode(value)
-      node.asBigInt should be ('defined)
-      node.asBoolean should be ('defined)
-      node.asDouble should be ('defined)
-      node.asInt should be ('defined)
-      node.asLong should be ('defined)
-      node.asString should be ('defined)
-    }
+    f.node.asBigInt shouldBe None
+    f.node.asBoolean shouldBe Some(true)
+    f.node.asDouble shouldBe None
+    f.node.asInt shouldBe Some(2)
+    f.node.asList.get should contain inOrderOnly (ModelNode("foo" -> "bar"), ModelNode("answer" -> 42))
+    f.node.asLong shouldBe Some(2)
+    f.node.asString shouldBe Some("""{"foo" => "bar","answer" => 42}""")
   }
 }

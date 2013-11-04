@@ -8,11 +8,11 @@ class PathSpec extends FlatSpec with Matchers {
      val ab = Path(List("a", "b"))
      val cd = Path(List("c", "d"))
      val abcd = ab / cd
-     assert(Path(List("a", "b", "c", "d")) === abcd)
+     abcd.elements should contain inOrderOnly ("a", "b", "c", "d")
    }
 
    it should "use an implicit conversion from String" in {
      val abcd = "a" / "b" / "c" / "d"
-     assert(Path(List("a", "b", "c", "d")) === abcd)
+     abcd.elements should contain inOrderOnly ("a", "b", "c", "d")
    }
  }

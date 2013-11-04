@@ -24,6 +24,7 @@ trait ValueConversions {
   /** Returns the value of this model node as `Some(String)` or `None` if the underlying node does not support conversion to `String` */
   def asString: Option[String] = safeAs(underlying.asString)
 
+  /** Returns the value of this model node as `Some(List[ModelNode])` or `None` if the underlying node does not support conversion to `List[ModelNode]` */
   def asList: Option[List[ModelNode]] = {
     safeAs(underlying.asList).map(jnodes => jnodes.map(jnode => this.fromJavaNode(jnode)).toList)
   }
