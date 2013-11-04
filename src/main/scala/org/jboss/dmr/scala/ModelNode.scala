@@ -204,24 +204,6 @@ abstract class ModelNode(javaModelNode: JavaModelNode)
     }
   }
 
-  //---------------------------------------- helper methods
-
-  private def contents: List[NodeTuple] = underlying.getType match {
-    case OBJECT => underlying.asList().map(propAsTuple).toList
-    case _ => List.empty
-  }
-
-  private def propAsTuple(jnode: JavaModelNode): NodeTuple = {
-    val prop = jnode.asProperty()
-    (prop.getName, fromJavaNode(prop.getValue))
-  }
-
-  private[scala] def fromJavaNode(jnode: JavaModelNode): ModelNode = jnode.getType match {
-    case OBJECT => new ComplexModelNode(jnode)
-    case PROPERTY => new ComplexModelNode(jnode.asObject()) // don't want to have properties in the scala API
-    case _ => new ValueModelNode(jnode)
-  }
-
   //---------------------------------------- update methods
 
   /**
@@ -295,6 +277,24 @@ abstract class ModelNode(javaModelNode: JavaModelNode)
       }
       case _ => throw new IllegalArgumentException( s"""Illegal type ${value.getClass.getName} for "$name".""")
     }
+  }
+
+  //---------------------------------------- helper methods
+
+  private def contents: List[NodeTuple] = underlying.getType match {
+    case OBJECT => underlying.asList().map(propAsTuple).toList
+    case _ => List.empty
+  }
+
+  private def propAsTuple(jnode: JavaModelNode): NodeTuple = {
+    val prop = jnode.asProperty()
+    (prop.getName, fromJavaNode(prop.getValue))
+  }
+
+  private[scala] def fromJavaNode(jnode: JavaModelNode): ModelNode = jnode.getType match {
+    case OBJECT => new ComplexModelNode(jnode)
+    case PROPERTY => new ComplexModelNode(jnode.asObject()) // don't want to have properties in the scala API
+    case _ => new ValueModelNode(jnode)
   }
 
   //---------------------------------------- object methods

@@ -6,6 +6,7 @@ import org.scalatest.{FlatSpec, Matchers}
 import org.jboss.dmr.ModelType._
 
 class NewModelNodeSpec extends FlatSpec with Matchers {
+
   def fixture = new {
     val valueNodes = List(ModelNode("foo"), ModelNode(true), ModelNode(1234), ModelNode(1234l), ModelNode(12.34d))
     val node = ModelNode("foo" -> "bar", "answer" -> 42)
@@ -54,13 +55,13 @@ class NewModelNodeSpec extends FlatSpec with Matchers {
   }
 
   it should "return the correct value for the as...() methods" in {
-    val f = fixture
-    f.node.asBigInt shouldBe None
-    f.node.asBoolean shouldBe Some(true)
-    f.node.asDouble shouldBe None
-    f.node.asInt shouldBe Some(2)
-    f.node.asList.get should contain inOrderOnly (ModelNode("foo" -> "bar"), ModelNode("answer" -> 42))
-    f.node.asLong shouldBe Some(2)
-    f.node.asString shouldBe Some("""{"foo" => "bar","answer" => 42}""")
+    val f = fixture; import f._
+    node.asBigInt shouldBe None
+    node.asBoolean shouldBe Some(true)
+    node.asDouble shouldBe None
+    node.asInt shouldBe Some(2)
+    node.asList.get should contain inOrderOnly (ModelNode("foo" -> "bar"), ModelNode("answer" -> 42))
+    node.asLong shouldBe Some(2)
+    node.asString shouldBe Some("""{"foo" => "bar","answer" => 42}""")
   }
 }
