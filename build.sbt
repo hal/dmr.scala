@@ -4,7 +4,7 @@ organization := "org.jboss"
 
 version := "0.2.0"
 
-scalaVersion := "2.10.2"
+scalaVersion := "2.10.3"
 
 scalacOptions ++= Seq(
   "-language:implicitConversions",
@@ -17,8 +17,7 @@ resolvers ++= Seq(
 )
 
 libraryDependencies ++= Seq(
-  "org.scala-lang" % "scala-reflect" % "2.10.2",
-  "org.scalatest" % "scalatest_2.10" % "2.0.RC3" % "test",
+  "org.scalatest" % "scalatest_2.10" % "2.0" % "test",
   "org.jboss" % "jboss-dmr" % "1.2.0.Final"
 )
 
