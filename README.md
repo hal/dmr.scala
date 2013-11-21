@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/hal/dmr.scala.png)](https://travis-ci.org/hal/dmr.scala)
+
 # DMR.scala
 
 Scala client library for DMR operations. Features:
