@@ -174,7 +174,7 @@ abstract class ModelNode(javaModelNode: JavaModelNode)
 
   /** Returns the values for this model node */
   def values: Iterable[ModelNode] = underlying.getType match {
-    case LIST => asList getOrElse List()
+    case LIST => asList getOrElse Nil
     case _ => contents.map {
       case (_, value) => value
     }
