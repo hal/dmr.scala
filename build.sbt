@@ -35,9 +35,28 @@ pomExtra :=
       <url>http://repository.jboss.com/licenses/lgpl.txt</url>
     </license>
   </licenses>
-  <url>
-    https://github.com/hal/dmr.scala
-  </url>
+  <url>https://github.com/hal/dmr.scala</url>
+  <scm>
+    <connection>scm:git@github.com:hal/dmr.scala.git</connection>
+    <developerConnection>scm:git:git@github.com:hal/dmr.scala.git</developerConnection>
+    <url>git@github.com:hal/dmr.scala.git</url>
+  </scm>
+  <developers>
+    <developer>
+      <name>Heiko Braun</name>
+      <id>hbraun</id>
+      <email>hbraun@redhat.com</email>
+      <organization>Red Hat</organization>
+      <timezone>+1</timezone>
+    </developer>
+    <developer>
+      <name>Harald Pehl</name>
+      <id>hpehl</id>
+      <email>hpehl@redhat.com</email>
+      <organization>Red Hat</organization>
+      <timezone>+1</timezone>
+    </developer>
+  </developers>
 
 publishTo <<= version { (v: String) =>
   val nexus = "https://repository.jboss.org/nexus/"
