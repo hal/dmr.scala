@@ -15,6 +15,8 @@ object ModelNode {
 
   type NodeTuple = (String, ModelNode)
 
+  object Undefined extends ComplexModelNode
+
   /** Creates a new model node holding the given value */
   def apply(value: AnyVal): ModelNode = {
     val jvalue = value match {
