@@ -336,7 +336,7 @@ class ComplexModelNode(javaModelNode: JavaModelNode = new JavaModelNode()) exten
 
 /**
  * Implementation for value model nodes. Contains empty implementations for [[org.jboss.dmr.scala.ModelNode#at]] and
- * [[org.jboss.dmr.scala.ModelNode#exec]].
+ * [[org.jboss.dmr.scala.ModelNode#op]].
  *
  * @param javaModelNode the underlying Java `org.jboss.dmr.ModelNode`
  */

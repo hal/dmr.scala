@@ -17,7 +17,7 @@ class DslModelNodeSpec extends FlatSpec with Matchers {
     addressType shouldBe LIST
   }
 
-  it should "support a DSL expression to setup a model node" in {
+  it should "support a DSL expression for creation" in {
     val node = ModelNode() at ("subsystem" -> "datasources") / ("data-source" -> "ExampleDS") op Operation('read_resource)(
       'include_runtime -> false,
       'recursive_depth -> 2)

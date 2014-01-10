@@ -1,7 +1,6 @@
 package org.jboss.dmr
 
-/**
- * Provides classes for dealing with the management model of a WildFly, JBoss or EAP instance.
+/** Provides classes for dealing with the management model of a WildFly, JBoss or EAP instance.
  *
  * ==Getting started==
  * Please make sure to import the following packages in order to bring the necessary implicit conversions into scope
